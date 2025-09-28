@@ -1,0 +1,971 @@
+{% extends 'dashboard/base_dashboard.html' %}
+{% load humanize %}
+{% load currency_tags %}
+{% load static %}
+
+{% block title %}HR/Admin Dashboard - {{ block.super }}{% endblock %}
+
+{% block extra_css %}
+{{ block.super }}
+<style>
+    .admin-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+    }
+    .metric-card {
+        transition: transform 0.2s ease-in-out;
+        cursor: pointer;
+        border: 1px solid #e3e6f0;
+    }
+    .metric-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    }
+    .system-health-indicator {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        display: inline-block;
+        margin-right: 8px;
+    }
+    .status-healthy { background-color: #28a745; }
+    .status-warning { background-color: #ffc107; }
+    .status-critical { background-color: #dc3545; }
+    .quick-action-btn {
+        transition: all 0.3s ease;
+        border: 2px solid transparent;
+    }
+    .quick-action-btn:hover {
+        transform: scale(1.05);
+        border-color: #4e73df;
+    }
+    .analytics-card {
+        background: linear-gradient(45deg, #f8f9fc, #e3e6f0);
+    }
+    .payroll-section {
+        background: linear-gradient(135deg, #28a745, #20c997);
+        color: white;
+    }
+</style>
+{% endblock %}
+
+{% block dashboard_content %}
+<!-- Admin Header -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card admin-header">
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <h3 class="mb-2"><strong>Pulse</strong><span class="text-info">Check</span> HR/Admin Dashboard</h3>
+                        <p class="mb-0 opacity-75">
+                            <i class="fas fa-heartbeat me-2"></i>System-wide oversight and management
+                            <span class="mx-2">•</span>
+                            <i class="fas fa-calendar-day me-2"></i>{{ today|date:"l, F d, Y" }}
+                        </p>
+                    </div>
+                    <div class="col-md-4 text-end">
+                        <div class="d-flex justify-content-end align-items-center">
+                            <span class="system-health-indicator status-{{ system_health.overall_status|default:'healthy' }}"></span>
+                            <span class="me-3">System {{ system_health.overall_status|default:'Healthy'|title }}</span>
+                            <div class="dropdown">
+                                <button class="btn btn-light btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                    <i class="fas fa-cog me-1"></i>Admin Tools
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end">
+                                    <li><a class="dropdown-item" href="{% url 'admin:index' %}" target="_blank">
+                                        <i class="fas fa-shield-alt me-2"></i>Django Admin
+                                    </a></li>
+                                    <li><a class="dropdown-item" href="#" onclick="alert('System backup feature coming soon')">
+                                        <i class="fas fa-database me-2"></i>System Backup
+                                    </a></li>
+                                    <li><a class="dropdown-item" href="{% url 'attendance_web:audit_logs' %}">
+                                        <i class="fas fa-search me-2"></i>Audit Logs
+                                    </a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><a class="dropdown-item" href="{% url 'attendance_web:system_settings' %}">
+                                        <i class="fas fa-tools me-2"></i>System Settings
+                                    </a></li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Key Metrics Overview -->
+<div class="row mb-4">
+    <div class="col-6 col-lg-3 mb-3">
+        <div class="card metric-card h-100" data-url="{% url 'attendance_web:user_list' %}">
+            <div class="card-body text-center p-3">
+                <i class="fas fa-users fa-lg fa-lg-2x text-primary mb-2 mb-lg-3"></i>
+                <h4 class="h5 h-lg-3 mb-1">{{ system_stats.total_employees|default:0|intcomma }}</h4>
+                <p class="text-muted mb-1 small">Total Employees</p>
+                <small class="text-success d-block d-lg-inline">{{ system_stats.active_employees|default:0 }} active</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3 mb-3">
+        <div class="card metric-card h-100" data-url="{% url 'attendance_web:attendance_list' %}">
+            <div class="card-body text-center p-3">
+                <i class="fas fa-clock fa-lg fa-lg-2x text-success mb-2 mb-lg-3"></i>
+                <h4 class="h5 h-lg-3 mb-1">{{ system_stats.today_attendance|default:0|intcomma }}</h4>
+                <p class="text-muted mb-1 small">Present Today</p>
+                <small class="text-warning d-block d-lg-inline">{{ system_stats.today_late|default:0 }} late</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3 mb-3">
+        <div class="card metric-card h-100" data-url="{% url 'attendance_web:pending_approvals' %}">
+            <div class="card-body text-center p-3">
+                <i class="fas fa-calendar-times fa-lg fa-lg-2x text-warning mb-2 mb-lg-3"></i>
+                <h4 class="h5 h-lg-3 mb-1">{{ system_stats.pending_leave|default:0|intcomma }}</h4>
+                <p class="text-muted mb-1 small">Pending Requests</p>
+                <small class="text-info d-block d-lg-inline">{{ system_stats.pending_regularizations|default:0 }} reg.</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3 mb-3">
+        <div class="card metric-card h-100" data-url="#" onclick="alert('Payroll dashboard coming soon')">
+            <div class="card-body text-center p-3">
+                <i class="fas fa-coins fa-lg fa-lg-2x text-info mb-2 mb-lg-3"></i>
+                <h4 class="h5 h-lg-3 mb-1">{{ system_stats.monthly_payroll|default:0|currency }}</h4>
+                <p class="text-muted mb-1 small">Monthly Payroll</p>
+                <small class="text-success d-block d-lg-inline">{{ system_stats.payroll_processed|default:0 }}% done</small>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Payroll Management Section -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card payroll-section">
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <h5 class="mb-2"><i class="fas fa-money-bill-wave me-2"></i>Payroll Management</h5>
+                        <p class="mb-0 opacity-75">Current month payroll processing status and actions</p>
+                    </div>
+                    <div class="col-md-4 text-end">
+                        <div class="btn-group">
+                            <button class="btn btn-light btn-sm" onclick="generatePayslips()">
+                                <i class="fas fa-file-invoice-dollar me-1"></i>Generate Payslips
+                            </button>
+                            <button class="btn btn-outline-light btn-sm" data-bs-toggle="modal" data-bs-target="#payrollModal">
+                                <i class="fas fa-cog me-1"></i>Settings
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row mt-4">
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <h4 class="mb-1">{{ payroll_stats.total_amount|default:0|currency }}</h4>
+                            <small class="opacity-75">Total Payroll</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <h4 class="mb-1">{{ payroll_stats.processed|default:0 }}</h4>
+                            <small class="opacity-75">Processed</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <h4 class="mb-1">{{ payroll_stats.pending|default:0 }}</h4>
+                            <small class="opacity-75">Pending</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <h4 class="mb-1">{{ payroll_stats.completion|default:0 }}%</h4>
+                            <small class="opacity-75">Completion</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions Grid -->
+<div class="row mb-4">
+    <div class="col-md-4 mb-3">
+        <div class="card quick-action-btn h-100" data-url="{% url 'attendance_web:user_list' %}">
+            <div class="card-body text-center">
+                <i class="fas fa-users-cog fa-3x text-primary mb-3"></i>
+                <h6 class="card-title">User Management</h6>
+                <p class="card-text small text-muted">Manage employee accounts, roles, and permissions</p>
+                <span class="badge bg-primary">{{ system_stats.total_employees|default:0 }} users</span>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 mb-3">
+        <div class="card quick-action-btn h-100" data-url="{% url 'attendance_web:reports' %}">
+            <div class="card-body text-center">
+                <i class="fas fa-chart-line fa-3x text-success mb-3"></i>
+                <h6 class="card-title">Attendance Timeline</h6>
+                <p class="card-text small text-muted">View comprehensive attendance analytics and trends</p>
+                <span class="badge bg-success">Live Data</span>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 mb-3">
+        <div class="card quick-action-btn h-100" data-url="{% url 'attendance_web:reports' %}">
+            <div class="card-body text-center">
+                <i class="fas fa-file-chart-line fa-3x text-info mb-3"></i>
+                <h6 class="card-title">Advanced Reports</h6>
+                <p class="card-text small text-muted">Generate detailed reports and export data</p>
+                <span class="badge bg-info">Analytics</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Analytics and System Health -->
+<div class="row mb-4">
+    <div class="col-md-8">
+        <div class="card analytics-card h-100">
+            <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                <h6 class="mb-0"><i class="fas fa-chart-bar me-2"></i>System Analytics</h6>
+                <div class="dropdown">
+                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                        Last 30 Days
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="#" onclick="updateAnalytics('7')">Last 7 Days</a></li>
+                        <li><a class="dropdown-item" href="#" onclick="updateAnalytics('30')">Last 30 Days</a></li>
+                        <li><a class="dropdown-item" href="#" onclick="updateAnalytics('90')">Last 90 Days</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row mb-4">
+                    <div class="col-md-4 text-center">
+                        <h4 class="text-primary">{{ analytics.attendance_rate|default:0 }}%</h4>
+                        <small class="text-muted">Attendance Rate</small>
+                    </div>
+                    <div class="col-md-4 text-center">
+                        <h4 class="text-success">{{ analytics.on_time_rate|default:0 }}%</h4>
+                        <small class="text-muted">On-Time Rate</small>
+                    </div>
+                    <div class="col-md-4 text-center">
+                        <h4 class="text-info">{{ analytics.face_recognition_usage|default:0 }}%</h4>
+                        <small class="text-muted">Face Recognition Usage</small>
+                    </div>
+                </div>
+                
+                <div class="chart-container" style="position: relative; height: 300px;">
+                    <canvas id="systemAnalyticsChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-header bg-light">
+                <h6 class="mb-0"><i class="fas fa-heartbeat me-2"></i>System Health</h6>
+            </div>
+            <div class="card-body">
+                <div class="mb-4">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Database</span>
+                        <span class="badge bg-success">Healthy</span>
+                    </div>
+                    <div class="progress mb-2" style="height: 8px;">
+                        <div class="progress-bar bg-success" style="width: 85%"></div>
+                    </div>
+                    <small class="text-muted">85% usage</small>
+                </div>
+
+                <div class="mb-4">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Storage</span>
+                        <span class="badge bg-warning">Moderate</span>
+                    </div>
+                    <div class="progress mb-2" style="height: 8px;">
+                        <div class="progress-bar bg-warning" style="width: 65%"></div>
+                    </div>
+                    <small class="text-muted">2.1GB / 5GB (65%)</small>
+                </div>
+
+                <div class="mb-4">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Face Recognition Service</span>
+                        <span class="badge bg-success">Active</span>
+                    </div>
+                    <div class="progress mb-2" style="height: 8px;">
+                        <div class="progress-bar bg-success" style="width: 100%"></div>
+                    </div>
+                    <small class="text-muted">All services operational</small>
+                </div>
+
+                <div class="alert alert-success mb-0">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-check-circle me-2"></i>
+                        <div>
+                            <strong>System Status:</strong> All systems operational
+                            <div class="small">Last checked: 2 minutes ago</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Activities and User Account Management -->
+<div class="row">
+    <div class="col-md-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                <h6 class="mb-0"><i class="fas fa-bell me-2"></i>Recent System Activities</h6>
+                <a href="{% url 'attendance_web:audit_logs' %}" class="btn btn-sm btn-outline-primary">View All</a>
+            </div>
+            <div class="card-body p-0">
+                <div class="list-group list-group-flush">
+                    <div class="list-group-item">
+                        <div class="d-flex w-100 justify-content-between">
+                            <div>
+                                <i class="fas fa-user-plus me-2 text-success"></i>
+                                New employee John Doe added to system
+                            </div>
+                            <small class="text-muted">2 hours ago</small>
+                        </div>
+                    </div>
+                    <div class="list-group-item">
+                        <div class="d-flex w-100 justify-content-between">
+                            <div>
+                                <i class="fas fa-file-invoice-dollar me-2 text-info"></i>
+                                Monthly payroll generated for 45 employees
+                            </div>
+                            <small class="text-muted">5 hours ago</small>
+                        </div>
+                    </div>
+                    <div class="list-group-item">
+                        <div class="d-flex w-100 justify-content-between">
+                            <div>
+                                <i class="fas fa-face-smile me-2 text-primary"></i>
+                                Face recognition setup completed by 3 employees
+                            </div>
+                            <small class="text-muted">1 day ago</small>
+                        </div>
+                    </div>
+                    <div class="list-group-item">
+                        <div class="d-flex w-100 justify-content-between">
+                            <div>
+                                <i class="fas fa-database me-2 text-warning"></i>
+                                System backup completed successfully
+                            </div>
+                            <small class="text-muted">2 days ago</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header bg-light">
+                <h6 class="mb-0"><i class="fas fa-users-cog me-2"></i>User Account Management</h6>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-6">
+                        <div class="text-center p-3 bg-light rounded">
+                            <h5 class="mb-1">{{ user_stats.pending_approvals|default:0 }}</h5>
+                            <small class="text-muted">Pending Approvals</small>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="text-center p-3 bg-light rounded">
+                            <h5 class="mb-1">{{ user_stats.face_not_setup|default:0 }}</h5>
+                            <small class="text-muted">Face Setup Pending</small>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="d-grid gap-2 d-md-block">
+                    <button class="btn btn-primary w-100 w-md-auto mb-2 mb-md-0 me-md-2" onclick="bulkUserActions()">
+                        <i class="fas fa-users me-1"></i><span class="d-none d-sm-inline">Bulk User Actions</span><span class="d-sm-none">Bulk Actions</span>
+                    </button>
+                    <button class="btn btn-outline-secondary w-100 w-md-auto mb-2 mb-md-0 me-md-2" onclick="exportUserData()">
+                        <i class="fas fa-download me-1"></i><span class="d-none d-sm-inline">Export User Data</span><span class="d-sm-none">Export</span>
+                    </button>
+                    <button class="btn btn-outline-info w-100 w-md-auto" onclick="sendSystemNotification()">
+                        <i class="fas fa-bullhorn me-1"></i><span class="d-none d-sm-inline">Send System Notification</span><span class="d-sm-none">Notify</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Payroll Modal -->
+<div class="modal fade" id="payrollModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Payroll Settings</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="payrollSettingsForm">
+                    {% csrf_token %}
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Pay Period</label>
+                            <select class="form-select" name="pay_period">
+                                <option value="monthly">Monthly</option>
+                                <option value="bi-weekly">Bi-weekly</option>
+                                <option value="weekly">Weekly</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Pay Date</label>
+                            <input type="date" class="form-control" name="pay_date">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Overtime Rate Multiplier</label>
+                            <input type="number" class="form-control" name="overtime_rate" step="0.1" value="1.5">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Tax Rate (%)</label>
+                            <input type="number" class="form-control" name="tax_rate" step="0.1" value="15">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="auto_generate" id="autoGenerate">
+                            <label class="form-check-label" for="autoGenerate">
+                                Automatically generate payslips on pay date
+                            </label>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="savePayrollSettings()">Save Settings</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+
+    // Initialize system analytics chart
+    initializeSystemAnalyticsChart();
+    
+    // Set up quick action card clicks
+    setupQuickActionCards();
+    
+    // Auto-refresh system health every 5 minutes
+    setInterval(refreshSystemHealth, 300000);
+});
+
+// System Analytics Chart
+function initializeSystemAnalyticsChart() {
+    const ctx = document.getElementById('systemAnalyticsChart');
+    if (!ctx) return;
+    
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
+            datasets: [{
+                label: 'Attendance Rate',
+                data: [92, 89, 94, 91],
+                borderColor: 'rgb(54, 162, 235)',
+                backgroundColor: 'rgba(54, 162, 235, 0.1)',
+                tension: 0.4
+            }, {
+                label: 'On-Time Rate',
+                data: [88, 85, 91, 87],
+                borderColor: 'rgb(75, 192, 192)',
+                backgroundColor: 'rgba(75, 192, 192, 0.1)',
+                tension: 0.4
+            }, {
+                label: 'Face Recognition Usage',
+                data: [76, 82, 85, 89],
+                borderColor: 'rgb(255, 99, 132)',
+                backgroundColor: 'rgba(255, 99, 132, 0.1)',
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        usePointStyle: true,
+                        padding: 20
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 100,
+                    ticks: {
+                        callback: function(value) {
+                            return value + '%';
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+// Quick Action Cards
+function setupQuickActionCards() {
+    document.querySelectorAll('.quick-action-btn').forEach(card => {
+        card.addEventListener('click', function() {
+            const url = this.dataset.url;
+            if (url) {
+                window.location.href = url;
+            }
+        });
+        
+        card.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-5px)';
+            this.style.boxShadow = '0 8px 25px rgba(0,0,0,0.15)';
+        });
+        
+        card.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0)';
+            this.style.boxShadow = '';
+        });
+    });
+}
+
+// Payroll Management Functions
+function generatePayslips() {
+    if (confirm('Generate payslips for all employees for the current month?')) {
+        // Redirect to the web-based payslip generation page
+        window.location.href = '/web/payroll/generate-payslips/';
+    }
+}
+
+function savePayrollSettings() {
+    const form = document.getElementById('payrollSettingsForm');
+    const formData = new FormData(form);
+    
+    fetch('#', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCsrfToken()
+        },
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAlert('success', 'Payroll settings saved successfully');
+            bootstrap.Modal.getInstance(document.getElementById('payrollModal')).hide();
+        } else {
+            showAlert('error', data.message || 'Failed to save settings');
+        }
+    })
+    .catch(error => {
+        showAlert('error', 'Error saving settings: ' + error.message);
+    });
+}
+
+// User Management Functions
+function bulkUserActions() {
+    const actions = [
+        { value: 'activate', text: 'Activate Selected Users' },
+        { value: 'deactivate', text: 'Deactivate Selected Users' },
+        { value: 'reset_password', text: 'Reset Passwords' },
+        { value: 'send_welcome', text: 'Send Welcome Email' },
+        { value: 'export_data', text: 'Export User Data' }
+    ];
+    
+    let actionHtml = '<select class="form-select" id="bulkActionSelect">';
+    actionHtml += '<option value="">Select an action...</option>';
+    actions.forEach(action => {
+        actionHtml += `<option value="${action.value}">${action.text}</option>`;
+    });
+    actionHtml += '</select>';
+    
+    showModal('Bulk User Actions', actionHtml, [
+        { text: 'Cancel', class: 'btn-secondary', action: 'dismiss' },
+        { text: 'Execute', class: 'btn-primary', action: 'executeBulkAction' }
+    ]);
+}
+
+function executeBulkAction() {
+    const action = document.getElementById('bulkActionSelect').value;
+    if (!action) {
+        showAlert('warning', 'Please select an action');
+        return;
+    }
+    
+    // Redirect to user management page with action parameter
+    window.location.href = `{% url "attendance_web:user_list" %}?action=${action}`;
+}
+
+function exportUserData() {
+    showLoadingSpinner('Preparing export...');
+    
+    fetch('#', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCsrfToken()
+        }
+    })
+    .then(response => response.blob())
+    .then(blob => {
+        hideLoadingSpinner();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `user_data_${new Date().toISOString().split('T')[0]}.xlsx`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+        showAlert('success', 'User data exported successfully');
+    })
+    .catch(error => {
+        hideLoadingSpinner();
+        showAlert('error', 'Error exporting data: ' + error.message);
+    });
+}
+
+function sendSystemNotification() {
+    const notificationHtml = `
+        <div class="mb-3">
+            <label class="form-label">Notification Title</label>
+            <input type="text" class="form-control" id="notificationTitle" placeholder="Enter notification title">
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Message</label>
+            <textarea class="form-control" id="notificationMessage" rows="4" placeholder="Enter notification message"></textarea>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Recipients</label>
+            <select class="form-select" id="notificationRecipients">
+                <option value="all">All Users</option>
+                <option value="employees">Employees Only</option>
+                <option value="managers">Managers Only</option>
+                <option value="hr">HR/Admin Only</option>
+            </select>
+        </div>
+        <div class="mb-3">
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="notificationUrgent">
+                <label class="form-check-label" for="notificationUrgent">
+                    Mark as urgent
+                </label>
+            </div>
+        </div>
+    `;
+    
+    showModal('Send System Notification', notificationHtml, [
+        { text: 'Cancel', class: 'btn-secondary', action: 'dismiss' },
+        { text: 'Send Notification', class: 'btn-primary', action: 'sendNotification' }
+    ]);
+}
+
+function sendNotification() {
+    const title = document.getElementById('notificationTitle').value;
+    const message = document.getElementById('notificationMessage').value;
+    const recipients = document.getElementById('notificationRecipients').value;
+    const urgent = document.getElementById('notificationUrgent').checked;
+    
+    if (!title || !message) {
+        showAlert('warning', 'Please fill in all required fields');
+        return;
+    }
+    
+    // Show loading state
+    showAlert('info', 'Sending notification...');
+    
+    fetch('/api/notifications/send-system-notification-web/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCsrfToken()
+        },
+        body: JSON.stringify({
+            title: title,
+            message: message,
+            recipients: recipients,
+            urgent: urgent
+        })
+    })
+    .then(response => {
+        // Check if response is ok
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            showAlert('success', `Notification sent successfully to ${data.count} users`);
+            hideModal();
+        } else {
+            showAlert('error', data.error || data.message || 'Failed to send notification');
+        }
+    })
+    .catch(error => {
+        console.error('Notification send error:', error);
+        if (error.message.includes('Failed to fetch')) {
+            showAlert('error', 'Network error: Unable to connect to server. Please check your connection and try again.');
+        } else if (error.message.includes('HTTP 403')) {
+            showAlert('error', 'Permission denied: You do not have permission to send system notifications.');
+        } else if (error.message.includes('HTTP 404')) {
+            showAlert('error', 'Service unavailable: Notification service not found.');
+        } else {
+            showAlert('error', 'Error sending notification: ' + error.message);
+        }
+    });
+}
+
+// Analytics Functions
+function updateAnalytics(period) {
+    showLoadingSpinner('Updating analytics...');
+    
+    fetch(`#?period=${period}`, {
+        method: 'GET',
+        headers: {
+            'X-CSRFToken': getCsrfToken()
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        hideLoadingSpinner();
+        if (data.success) {
+            updateAnalyticsDisplay(data.analytics);
+            updateAnalyticsChart(data.chart_data);
+        } else {
+            showAlert('error', 'Failed to update analytics');
+        }
+    })
+    .catch(error => {
+        hideLoadingSpinner();
+        showAlert('error', 'Error updating analytics: ' + error.message);
+    });
+}
+
+function updateAnalyticsDisplay(analytics) {
+    // Update the analytics display with new data
+    document.querySelector('.text-primary').textContent = analytics.attendance_rate + '%';
+    document.querySelector('.text-success').textContent = analytics.on_time_rate + '%';
+    document.querySelector('.text-info').textContent = analytics.face_recognition_usage + '%';
+}
+
+function updateAnalyticsChart(chartData) {
+    // Update the chart with new data
+    const chart = Chart.getChart('systemAnalyticsChart');
+    if (chart) {
+        chart.data = chartData;
+        chart.update();
+    }
+}
+
+// System Health Functions
+function refreshSystemHealth() {
+    fetch('{% url "attendance_web:system_health" %}', {
+        method: 'GET',
+        headers: {
+            'X-CSRFToken': getCsrfToken()
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            updateSystemHealthDisplay(data.health);
+        }
+    })
+    .catch(error => {
+        console.error('Error refreshing system health:', error);
+    });
+}
+
+function updateSystemHealthDisplay(health) {
+    // Update system health indicators
+    console.log('System health updated:', health);
+}
+
+// Utility Functions
+function getCsrfToken() {
+    return document.querySelector('[name=csrfmiddlewaretoken]').value;
+}
+
+function showLoadingSpinner(message = 'Loading...') {
+    const spinner = document.createElement('div');
+    spinner.id = 'loadingSpinner';
+    spinner.className = 'position-fixed top-50 start-50 translate-middle';
+    spinner.style.zIndex = '9999';
+    spinner.innerHTML = `
+        <div class="bg-white p-4 rounded shadow text-center">
+            <div class="spinner-border text-primary mb-2" role="status"></div>
+            <div>${message}</div>
+        </div>
+    `;
+    document.body.appendChild(spinner);
+}
+
+function hideLoadingSpinner() {
+    const spinner = document.getElementById('loadingSpinner');
+    if (spinner) {
+        spinner.remove();
+    }
+}
+
+function showAlert(type, message) {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+    alertDiv.style.top = '20px';
+    alertDiv.style.right = '20px';
+    alertDiv.style.zIndex = '9999';
+    alertDiv.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    document.body.appendChild(alertDiv);
+    
+    setTimeout(() => {
+        if (alertDiv.parentNode) {
+            alertDiv.remove();
+        }
+    }, 5000);
+}
+
+function showModal(title, content, buttons) {
+    const modalHtml = `
+        <div class="modal fade" id="dynamicModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">${title}</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        ${content}
+                    </div>
+                    <div class="modal-footer">
+                        ${buttons.map(btn => 
+                            `<button type="button" class="btn ${btn.class}" ${btn.action === 'dismiss' ? 'data-bs-dismiss="modal"' : `onclick="${btn.action}()"`}>
+                                ${btn.text}
+                            </button>`
+                        ).join('')}
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Remove existing modal if any
+    const existingModal = document.getElementById('dynamicModal');
+    if (existingModal) {
+        existingModal.remove();
+    }
+    
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    const modal = new bootstrap.Modal(document.getElementById('dynamicModal'));
+    modal.show();
+}
+
+function hideModal() {
+    const modal = bootstrap.Modal.getInstance(document.getElementById('dynamicModal'));
+    if (modal) {
+        modal.hide();
+    }
+}
+</script>
+
+<style>
+.payroll-section {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.analytics-card .chart-container {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 20px;
+}
+
+.quick-action-btn {
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 1px solid #e9ecef;
+}
+
+.quick-action-btn:hover {
+    border-color: #007bff;
+    box-shadow: 0 4px 15px rgba(0,123,255,0.1);
+}
+
+.metric-card {
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.metric-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.list-group-item {
+    border-left: none;
+    border-right: none;
+}
+
+.list-group-item:first-child {
+    border-top: none;
+}
+
+.list-group-item:last-child {
+    border-bottom: none;
+}
+
+.progress {
+    background-color: rgba(255,255,255,0.3);
+}
+
+.alert {
+    max-width: 400px;
+}
+
+@media (max-width: 768px) {
+    .chart-container {
+        height: 250px !important;
+    }
+    
+    .quick-action-btn .card-body {
+        padding: 1rem 0.5rem;
+    }
+    
+    .quick-action-btn i {
+        font-size: 2rem !important;
+    }
+}
+</style>
+{% endblock %}

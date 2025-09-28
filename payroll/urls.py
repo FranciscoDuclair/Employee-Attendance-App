@@ -4,8 +4,11 @@ from rest_framework.routers import DefaultRouter
 from .views import (
     PayrollListView, PayrollDetailView, PayrollCreateView, PayrollCalculationView,
     PayrollReportView, PayrollSummaryView, PayrollBulkActionView, PayrollAdjustmentView,
-    PayrollComparisonView, my_payroll, auto_generate_payroll
+    PayrollComparisonView, my_payroll, auto_generate_payroll, payroll_web_view, payslip_download_web,
+    generate_payslips_web
 )
+
+app_name = 'payroll'
 
 # Create router for ViewSets
 router = DefaultRouter()
@@ -28,12 +31,15 @@ urlpatterns = [
     path('bulk-actions/', PayrollBulkActionView.as_view(), name='payroll_bulk_actions'),
     
     # Adjustments and comparisons
-    path('adjustments/', PayrollAdjustmentView.as_view(), name='payroll_adjustments'),
     path('compare/', PayrollComparisonView.as_view(), name='payroll_comparison'),
     
     # Employee access
     path('my-payroll/', my_payroll, name='my_payroll'),
     
-    # Include router URLs
-    path('', include(router.urls)),
+    # Web views
+    path('my-payroll/', my_payroll, name='my_payroll'),
+    path('payroll-web/', payroll_web_view, name='payroll_web'),
+    path('payslip-download/<int:payroll_id>/', payslip_download_web, name='payslip_download'),
+    path('generate-payslips/', generate_payslips_web, name='generate_payslips'),
+    path('my-payroll-web/', payroll_web_view, name='my_payroll_web'),
 ]

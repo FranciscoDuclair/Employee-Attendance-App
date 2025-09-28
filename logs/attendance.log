@@ -1,0 +1,103 @@
+INFO 2025-09-14 16:24:33,949 face_recognition_utils 3668 21976 Detected 1 face(s) in the image
+INFO 2025-09-14 16:25:02,700 face_recognition_utils 3668 21976 Detected 1 face(s) in the image
+INFO 2025-09-14 16:25:26,599 face_recognition_utils 3668 21976 Successfully generated encoding using default method
+INFO 2025-09-14 19:12:39,118 web_views 18816 11004 User logout: admin@company.com
+INFO 2025-09-14 19:13:05,117 backends 18816 11004 Successful authentication: francisco@gmail.com
+INFO 2025-09-14 19:13:14,085 backends 18816 11004 Successful authentication: francisco@gmail.com
+INFO 2025-09-14 19:13:17,211 backends 18816 23664 Successful authentication: francisco@gmail.com
+INFO 2025-09-14 19:13:17,591 backends 18816 24572 Successful authentication: francisco@gmail.com
+INFO 2025-09-14 19:13:21,671 backends 18816 7668 Successful authentication: francisco@gmail.com
+INFO 2025-09-14 19:13:26,293 backends 18816 7668 Successful authentication: francisco@gmail.com
+INFO 2025-09-14 19:16:04,075 backends 18816 29368 Successful authentication: admin@gmail.com
+INFO 2025-09-14 19:23:33,624 backends 7216 11560 Successful authentication: jane.smith@company.com
+INFO 2025-09-14 19:23:33,874 web_views 7216 11560 Successful login: jane.smith@company.com from 127.0.0.1
+INFO 2025-09-14 19:23:34,007 middleware 7216 11560 Successful login: jane.smith@company.com from 127.0.0.1 - Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36 Edg/139.0.0.0
+INFO 2025-09-20 12:15:28,214 web_views 14364 22768 User logout: admin@company.com
+INFO 2025-09-20 12:15:32,960 backends 14364 22768 Successful authentication: admin@company.com
+INFO 2025-09-20 12:15:33,510 web_views 14364 22768 Successful login: admin@company.com from 127.0.0.1
+INFO 2025-09-20 12:15:33,778 middleware 14364 22768 Successful login: admin@company.com from 127.0.0.1 - Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36 Edg/139.0.0.0
+INFO 2025-09-24 12:35:02,800 backends 21420 23384 Successful authentication: admin@company.com
+INFO 2025-09-24 12:35:03,359 web_views 21420 23384 Successful login: admin@company.com from 127.0.0.1
+INFO 2025-09-24 12:35:03,690 middleware 21420 23384 Successful login: admin@company.com from 127.0.0.1 - Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36 Edg/139.0.0.0
+INFO 2025-09-24 14:14:12,476 face_recognition_utils 21420 26172 Detected 1 face(s) in the image
+INFO 2025-09-24 14:14:15,203 face_recognition_utils 21420 26172 Detected 1 face(s) in the image
+INFO 2025-09-24 14:14:23,033 face_recognition_utils 21420 26172 Successfully generated encoding using default method
+INFO 2025-09-26 01:52:49,197 face_recognition_utils 30176 17452 Detected 2 face(s) in the image
+INFO 2025-09-26 01:52:57,254 face_recognition_utils 30176 17452 Detected 2 face(s) in the image
+INFO 2025-09-26 01:53:31,651 face_recognition_utils 30176 17452 Successfully generated encoding using default method
+INFO 2025-09-26 01:53:31,999 face_recognition_utils 30176 17452 Face comparison - Distance: 0.0000, Confidence: 100.00%, Match: True, Threshold: 0.5400
+INFO 2025-09-26 01:53:31,999 face_recognition_utils 30176 17452 Face comparison - Distance: 4.5405, Confidence: 59.78%, Match: False, Threshold: 0.6000
+INFO 2025-09-26 01:53:53,802 face_recognition_utils 30176 17452 Detected 2 face(s) in the image
+INFO 2025-09-27 10:12:24,546 web_views 32384 12108 User logout: admin@company.com
+INFO 2025-09-27 10:12:58,407 backends 32384 12108 Successful authentication: admin@company.com
+INFO 2025-09-27 10:17:26,279 middleware 32384 14296 Successful login: admin@company.com from 127.0.0.1 - Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36 Edg/139.0.0.0
+INFO 2025-09-27 10:17:46,143 web_views 32384 14296 User logout: admin@company.com
+WARNING 2025-09-27 10:18:08,839 web_views 32384 14296 Failed login attempt: manager@gmail.com from 127.0.0.1
+WARNING 2025-09-27 10:18:48,374 web_views 32384 14296 Failed login attempt: manager@gmail.com from 127.0.0.1
+INFO 2025-09-27 10:19:10,011 backends 32384 14296 Successful authentication: admin@company.com
+INFO 2025-09-27 10:22:01,925 middleware 32384 14296 Successful login: admin@company.com from 127.0.0.1 - Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36 Edg/139.0.0.0
+INFO 2025-09-27 10:28:07,900 web_views 14764 26532 User logout: admin@company.com
+INFO 2025-09-27 10:28:20,223 backends 14764 26532 Successful authentication: franciscoi@gmail.com
+INFO 2025-09-27 10:28:20,982 web_views 14764 26532 Successful login: franciscoi@gmail.com from 127.0.0.1
+INFO 2025-09-27 10:28:21,307 middleware 14764 26532 Successful login: franciscoi@gmail.com from 127.0.0.1 - Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36 Edg/139.0.0.0
+INFO 2025-09-27 10:30:13,911 web_views 14764 26532 User logout: franciscoi@gmail.com
+INFO 2025-09-27 10:30:20,414 backends 14764 26532 Successful authentication: franciscoi@gmail.com
+INFO 2025-09-27 10:30:21,138 web_views 14764 26532 Successful login: franciscoi@gmail.com from 127.0.0.1
+INFO 2025-09-27 10:30:21,389 middleware 14764 26532 Successful login: franciscoi@gmail.com from 127.0.0.1 - Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36 Edg/139.0.0.0
+INFO 2025-09-27 10:41:35,656 web_views 13656 12416 User logout: franciscoi@gmail.com
+INFO 2025-09-27 10:41:41,924 backends 13656 12416 Successful authentication: franciscoi@gmail.com
+INFO 2025-09-27 10:41:42,519 web_views 13656 12416 Successful login: franciscoi@gmail.com from 127.0.0.1
+INFO 2025-09-27 10:41:42,850 middleware 13656 12416 Successful login: franciscoi@gmail.com from 127.0.0.1 - Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36 Edg/139.0.0.0
+INFO 2025-09-27 10:42:54,745 web_views 13656 12416 User logout: franciscoi@gmail.com
+INFO 2025-09-27 10:44:44,513 backends 13656 12416 Successful authentication: admin@company.com
+INFO 2025-09-27 10:50:45,737 middleware 13656 12416 Successful login: admin@company.com from 127.0.0.1 - Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36 Edg/139.0.0.0
+INFO 2025-09-27 10:53:57,029 web_views 13656 12416 User logout: admin@company.com
+INFO 2025-09-27 10:54:30,868 backends 13656 12416 Successful authentication: francisco1@gmail.com
+INFO 2025-09-27 10:54:31,359 web_views 13656 12416 Successful login: francisco1@gmail.com from 127.0.0.1
+INFO 2025-09-27 10:54:31,587 middleware 13656 12416 Successful login: francisco1@gmail.com from 127.0.0.1 - Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36 Edg/139.0.0.0
+INFO 2025-09-27 11:00:29,396 backends 13656 12416 Successful authentication: admin@company.com
+INFO 2025-09-27 11:04:57,114 web_views 13656 12416 User logout: admin@company.com
+WARNING 2025-09-27 11:05:17,914 web_views 13656 12416 Failed login attempt: francisco2@gmail.com from 127.0.0.1
+INFO 2025-09-27 11:05:37,368 backends 13656 12416 Successful authentication: admin1@gmail.com
+INFO 2025-09-27 11:05:38,072 web_views 13656 12416 Successful login: admin1@gmail.com from 127.0.0.1
+INFO 2025-09-27 11:05:38,305 middleware 13656 12416 Successful login: admin1@gmail.com from 127.0.0.1 - Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36 Edg/139.0.0.0
+INFO 2025-09-27 11:28:28,603 backends 17784 12880 Successful authentication: admin1@gmail.com
+INFO 2025-09-27 11:28:29,713 web_views 17784 12880 Successful login: admin1@gmail.com from 127.0.0.1
+INFO 2025-09-27 11:28:30,064 middleware 17784 12880 Successful login: admin1@gmail.com from 127.0.0.1 - Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36 Edg/140.0.0.0
+INFO 2025-09-27 11:37:04,330 web_views 17784 3860 User logout: admin1@gmail.com
+INFO 2025-09-27 11:37:28,299 backends 17784 11452 Successful authentication: francisco1@gmail.com
+INFO 2025-09-27 11:37:29,113 web_views 17784 11452 Successful login: francisco1@gmail.com from 127.0.0.1
+INFO 2025-09-27 11:37:29,739 middleware 17784 11452 Successful login: francisco1@gmail.com from 127.0.0.1 - Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36 Edg/140.0.0.0
+INFO 2025-09-27 11:41:26,846 web_views 17784 31692 User logout: francisco1@gmail.com
+INFO 2025-09-27 11:41:39,487 backends 17784 31692 Successful authentication: admin1@gmail.com
+INFO 2025-09-27 11:41:40,141 web_views 17784 31692 Successful login: admin1@gmail.com from 127.0.0.1
+INFO 2025-09-27 11:41:40,365 middleware 17784 31692 Successful login: admin1@gmail.com from 127.0.0.1 - Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36 Edg/140.0.0.0
+INFO 2025-09-27 11:43:13,503 web_views 17784 31692 User logout: admin1@gmail.com
+INFO 2025-09-27 11:43:32,562 backends 17784 31692 Successful authentication: francisco1@gmail.com
+INFO 2025-09-27 11:43:33,093 web_views 17784 31692 Successful login: francisco1@gmail.com from 127.0.0.1
+INFO 2025-09-27 11:43:33,476 middleware 17784 31692 Successful login: francisco1@gmail.com from 127.0.0.1 - Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36 Edg/140.0.0.0
+INFO 2025-09-27 13:45:42,142 web_views 22428 9136 User logout: francisco1@gmail.com
+WARNING 2025-09-27 13:46:05,167 web_views 22428 9136 Failed login attempt: francisco2@gmail.com from 127.0.0.1
+INFO 2025-09-27 13:46:34,386 backends 22428 9136 Successful authentication: franciscoi@gmail.com
+INFO 2025-09-27 13:46:34,945 web_views 22428 9136 Successful login: franciscoi@gmail.com from 127.0.0.1
+INFO 2025-09-27 13:46:35,219 middleware 22428 9136 Successful login: franciscoi@gmail.com from 127.0.0.1 - Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36 Edg/140.0.0.0
+INFO 2025-09-27 14:49:09,037 web_views 27148 23120 User logout: franciscoi@gmail.com
+INFO 2025-09-27 14:49:26,304 backends 27148 23120 Successful authentication: francisco1@gmail.com
+INFO 2025-09-27 14:49:26,850 web_views 27148 23120 Successful login: francisco1@gmail.com from 127.0.0.1
+INFO 2025-09-27 14:49:27,076 middleware 27148 23120 Successful login: francisco1@gmail.com from 127.0.0.1 - Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36 Edg/140.0.0.0
+INFO 2025-09-27 14:49:56,759 web_views 27148 23120 User logout: francisco1@gmail.com
+INFO 2025-09-27 14:50:06,507 backends 27148 23120 Successful authentication: admin1@gmail.com
+INFO 2025-09-27 14:50:07,071 web_views 27148 23120 Successful login: admin1@gmail.com from 127.0.0.1
+INFO 2025-09-27 14:50:07,528 middleware 27148 23120 Successful login: admin1@gmail.com from 127.0.0.1 - Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36 Edg/140.0.0.0
+INFO 2025-09-27 14:54:24,795 web_views 27148 13332 User logout: admin1@gmail.com
+INFO 2025-09-27 14:54:36,546 backends 27148 13332 Successful authentication: francisco1@gmail.com
+INFO 2025-09-27 14:54:37,000 web_views 27148 13332 Successful login: francisco1@gmail.com from 127.0.0.1
+INFO 2025-09-27 14:54:37,270 middleware 27148 13332 Successful login: francisco1@gmail.com from 127.0.0.1 - Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36 Edg/140.0.0.0
+INFO 2025-09-27 14:55:22,569 web_views 27148 13332 User logout: francisco1@gmail.com
+INFO 2025-09-27 14:55:33,018 backends 27148 13332 Successful authentication: franciscoi@gmail.com
+INFO 2025-09-27 14:55:33,515 web_views 27148 13332 Successful login: franciscoi@gmail.com from 127.0.0.1
+INFO 2025-09-27 14:55:33,820 middleware 27148 13332 Successful login: franciscoi@gmail.com from 127.0.0.1 - Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36 Edg/140.0.0.0
+INFO 2025-09-27 21:57:20,278 web_views 16484 12312 User logout: franciscoi@gmail.com
+INFO 2025-09-27 21:57:29,995 backends 16484 12312 Successful authentication: admin1@gmail.com
+INFO 2025-09-27 21:57:30,573 web_views 16484 12312 Successful login: admin1@gmail.com from 127.0.0.1
+INFO 2025-09-27 21:57:30,826 middleware 16484 12312 Successful login: admin1@gmail.com from 127.0.0.1 - Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36 Edg/140.0.0.0

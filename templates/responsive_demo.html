@@ -1,0 +1,484 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Responsive Design Demo - {{ block.super }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .device-demo {
+        border: 2px solid #dee2e6;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+        background: #f8f9fa;
+    }
+    
+    .breakpoint-indicator {
+        position: fixed;
+        top: 10px;
+        right: 10px;
+        background: rgba(0, 0, 0, 0.8);
+        color: white;
+        padding: 5px 10px;
+        border-radius: 4px;
+        font-size: 12px;
+        z-index: 1000;
+    }
+    
+    .responsive-grid-demo .col {
+        background: #e9ecef;
+        border: 1px solid #dee2e6;
+        padding: 10px;
+        margin-bottom: 10px;
+        text-align: center;
+    }
+    
+    .touch-demo {
+        background: linear-gradient(45deg, #007bff, #6610f2);
+        color: white;
+        padding: 20px;
+        border-radius: 8px;
+        transition: transform 0.2s;
+    }
+    
+    .touch-demo:hover,
+    .touch-demo.touch-active {
+        transform: scale(0.95);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Breakpoint Indicator -->
+    <div class="breakpoint-indicator" id="breakpointIndicator">
+        Current: <span id="currentBreakpoint">Unknown</span>
+    </div>
+    
+    <div class="row">
+        <div class="col-12">
+            <h1 class="mb-4"><strong>Pulse</strong><span class="text-info">Check</span> Responsive Design Demo</h1>
+            <p class="lead">This page demonstrates the responsive features implemented across 10+ device types for the PulseCheck attendance system.</p>
+        </div>
+    </div>
+    
+    <!-- Device Type Detection -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="device-demo">
+                <h3>Device Detection</h3>
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="card">
+                            <div class="card-body text-center">
+                                <i class="fas fa-mobile-alt fa-2x mb-2"></i>
+                                <h5>Mobile</h5>
+                                <span class="badge" id="mobileStatus">Detecting...</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card">
+                            <div class="card-body text-center">
+                                <i class="fas fa-tablet-alt fa-2x mb-2"></i>
+                                <h5>Tablet</h5>
+                                <span class="badge" id="tabletStatus">Detecting...</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card">
+                            <div class="card-body text-center">
+                                <i class="fas fa-desktop fa-2x mb-2"></i>
+                                <h5>Desktop</h5>
+                                <span class="badge" id="desktopStatus">Detecting...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row mt-3">
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-body text-center">
+                                <i class="fas fa-hand-pointer fa-2x mb-2"></i>
+                                <h5>Touch Device</h5>
+                                <span class="badge" id="touchStatus">Detecting...</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-body text-center">
+                                <i class="fas fa-arrows-alt fa-2x mb-2"></i>
+                                <h5>Orientation</h5>
+                                <span class="badge" id="orientationStatus">Detecting...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Responsive Grid Demo -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="device-demo">
+                <h3>Responsive Grid System</h3>
+                <p>Resize your browser or rotate your device to see the grid adapt:</p>
+                <div class="responsive-grid-demo">
+                    <div class="row">
+                        <div class="col-12 col-sm-6 col-md-4 col-lg-3 col-xl-2">
+                            <div class="col">XS-12 SM-6 MD-4 LG-3 XL-2</div>
+                        </div>
+                        <div class="col-12 col-sm-6 col-md-4 col-lg-3 col-xl-2">
+                            <div class="col">XS-12 SM-6 MD-4 LG-3 XL-2</div>
+                        </div>
+                        <div class="col-12 col-sm-6 col-md-4 col-lg-3 col-xl-2">
+                            <div class="col">XS-12 SM-6 MD-4 LG-3 XL-2</div>
+                        </div>
+                        <div class="col-12 col-sm-6 col-md-4 col-lg-3 col-xl-2">
+                            <div class="col">XS-12 SM-6 MD-4 LG-3 XL-2</div>
+                        </div>
+                        <div class="col-12 col-sm-6 col-md-4 col-lg-3 col-xl-2">
+                            <div class="col">XS-12 SM-6 MD-4 LG-3 XL-2</div>
+                        </div>
+                        <div class="col-12 col-sm-6 col-md-4 col-lg-3 col-xl-2">
+                            <div class="col">XS-12 SM-6 MD-4 LG-3 XL-2</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Responsive Components -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="device-demo">
+                <h3>Responsive Components</h3>
+                
+                <!-- Responsive Buttons -->
+                <div class="mb-4">
+                    <h5>Responsive Buttons</h5>
+                    <div class="btn-group-vertical btn-group-sm-horizontal w-100" role="group">
+                        <button type="button" class="btn btn-primary">
+                            <i class="fas fa-save me-1"></i>
+                            <span class="d-none d-sm-inline">Save Changes</span>
+                            <span class="d-sm-none">Save</span>
+                        </button>
+                        <button type="button" class="btn btn-secondary">
+                            <i class="fas fa-times me-1"></i>
+                            <span class="d-none d-sm-inline">Cancel</span>
+                            <span class="d-sm-none">Cancel</span>
+                        </button>
+                        <button type="button" class="btn btn-info">
+                            <i class="fas fa-info me-1"></i>
+                            <span class="d-none d-sm-inline">More Info</span>
+                            <span class="d-sm-none">Info</span>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Responsive Table -->
+                <div class="mb-4">
+                    <h5>Responsive Table</h5>
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Email</th>
+                                    <th class="d-none d-md-table-cell">Department</th>
+                                    <th class="d-none d-lg-table-cell">Join Date</th>
+                                    <th class="d-none d-xl-table-cell">Last Login</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>John Doe</td>
+                                    <td>john@example.com</td>
+                                    <td class="d-none d-md-table-cell">Engineering</td>
+                                    <td class="d-none d-lg-table-cell">2023-01-15</td>
+                                    <td class="d-none d-xl-table-cell">2025-09-27</td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-edit"></i>
+                                            <span class="d-none d-lg-inline ms-1">Edit</span>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Jane Smith</td>
+                                    <td>jane@example.com</td>
+                                    <td class="d-none d-md-table-cell">HR</td>
+                                    <td class="d-none d-lg-table-cell">2023-03-20</td>
+                                    <td class="d-none d-xl-table-cell">2025-09-26</td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-edit"></i>
+                                            <span class="d-none d-lg-inline ms-1">Edit</span>
+                                        </button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <!-- Responsive Cards -->
+                <div class="mb-4">
+                    <h5>Responsive Cards</h5>
+                    <div class="row">
+                        <div class="col-6 col-md-4 col-lg-3 col-xl-2 mb-3">
+                            <div class="card h-100">
+                                <div class="card-body text-center p-2 p-md-3">
+                                    <i class="fas fa-users fa-lg fa-md-2x text-primary mb-2"></i>
+                                    <h6 class="card-title">Users</h6>
+                                    <p class="card-text h4">150</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-4 col-lg-3 col-xl-2 mb-3">
+                            <div class="card h-100">
+                                <div class="card-body text-center p-2 p-md-3">
+                                    <i class="fas fa-clock fa-lg fa-md-2x text-success mb-2"></i>
+                                    <h6 class="card-title">Present</h6>
+                                    <p class="card-text h4">142</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-4 col-lg-3 col-xl-2 mb-3">
+                            <div class="card h-100">
+                                <div class="card-body text-center p-2 p-md-3">
+                                    <i class="fas fa-calendar fa-lg fa-md-2x text-warning mb-2"></i>
+                                    <h6 class="card-title">Leave</h6>
+                                    <p class="card-text h4">8</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Touch Optimization Demo -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="device-demo">
+                <h3>Touch Optimization</h3>
+                <p>On touch devices, elements have enhanced touch targets and feedback:</p>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <div class="touch-demo">
+                            <h5>Touch-Optimized Card</h5>
+                            <p>Tap or click to see touch feedback</p>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-primary btn-lg">Large Touch Button</button>
+                            <button class="btn btn-secondary">Regular Button</button>
+                            <button class="btn btn-outline-info btn-sm">Small Button</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Responsive Form Demo -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="device-demo">
+                <h3>Responsive Forms</h3>
+                <form>
+                    <div class="row">
+                        <div class="col-12 col-md-6 mb-3">
+                            <label for="name" class="form-label">Full Name</label>
+                            <input type="text" class="form-control" id="name" placeholder="Enter your name">
+                        </div>
+                        <div class="col-12 col-md-6 mb-3">
+                            <label for="email" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="email" placeholder="Enter your email">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-12 col-sm-6 col-lg-4 mb-3">
+                            <label for="department" class="form-label">Department</label>
+                            <select class="form-select" id="department">
+                                <option>Engineering</option>
+                                <option>HR</option>
+                                <option>Finance</option>
+                            </select>
+                        </div>
+                        <div class="col-12 col-sm-6 col-lg-4 mb-3">
+                            <label for="phone" class="form-label">Phone</label>
+                            <input type="tel" class="form-control" id="phone" placeholder="Phone number">
+                        </div>
+                        <div class="col-12 col-lg-4 mb-3">
+                            <label for="startDate" class="form-label">Start Date</label>
+                            <input type="date" class="form-control" id="startDate">
+                        </div>
+                    </div>
+                    <div class="d-grid d-md-flex gap-2">
+                        <button type="submit" class="btn btn-primary">Submit</button>
+                        <button type="reset" class="btn btn-secondary">Reset</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Responsive Modal Demo -->
+<div class="modal fade" id="responsiveModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-fullscreen-sm-down">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Responsive Modal</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>This modal adapts to different screen sizes:</p>
+                <ul>
+                    <li>On mobile: Full screen</li>
+                    <li>On tablet and desktop: Standard modal</li>
+                </ul>
+                <div class="row">
+                    <div class="col-12 col-md-6">
+                        <h6>Device Info:</h6>
+                        <ul id="deviceInfo">
+                            <li>Loading...</li>
+                        </ul>
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <h6>Screen Info:</h6>
+                        <ul id="screenInfo">
+                            <li>Loading...</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer flex-column flex-md-row">
+                <button type="button" class="btn btn-secondary w-100 w-md-auto mb-2 mb-md-0" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary w-100 w-md-auto">Save Changes</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Floating Action Button (Mobile) -->
+<button class="btn btn-primary d-md-none position-fixed" style="bottom: 20px; right: 20px; z-index: 1000; border-radius: 50%; width: 56px; height: 56px;" data-bs-toggle="modal" data-bs-target="#responsiveModal">
+    <i class="fas fa-plus"></i>
+</button>
+
+<!-- Desktop Action Button -->
+<div class="d-none d-md-block position-fixed" style="bottom: 20px; right: 20px; z-index: 1000;">
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#responsiveModal">
+        <i class="fas fa-cog me-2"></i>Open Modal Demo
+    </button>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    function updateDeviceInfo() {
+        // Update breakpoint indicator
+        const breakpoint = ResponsiveUtils.getCurrentBreakpoint();
+        document.getElementById('currentBreakpoint').textContent = breakpoint.toUpperCase();
+        
+        // Update device status badges
+        const mobileStatus = document.getElementById('mobileStatus');
+        const tabletStatus = document.getElementById('tabletStatus');
+        const desktopStatus = document.getElementById('desktopStatus');
+        const touchStatus = document.getElementById('touchStatus');
+        const orientationStatus = document.getElementById('orientationStatus');
+        
+        // Mobile status
+        if (ResponsiveUtils.isMobile()) {
+            mobileStatus.textContent = 'Active';
+            mobileStatus.className = 'badge bg-success';
+        } else {
+            mobileStatus.textContent = 'Inactive';
+            mobileStatus.className = 'badge bg-secondary';
+        }
+        
+        // Tablet status
+        if (ResponsiveUtils.isTablet()) {
+            tabletStatus.textContent = 'Active';
+            tabletStatus.className = 'badge bg-success';
+        } else {
+            tabletStatus.textContent = 'Inactive';
+            tabletStatus.className = 'badge bg-secondary';
+        }
+        
+        // Desktop status
+        if (ResponsiveUtils.isDesktop()) {
+            desktopStatus.textContent = 'Active';
+            desktopStatus.className = 'badge bg-success';
+        } else {
+            desktopStatus.textContent = 'Inactive';
+            desktopStatus.className = 'badge bg-secondary';
+        }
+        
+        // Touch status
+        if (ResponsiveUtils.isTouchDevice()) {
+            touchStatus.textContent = 'Touch Enabled';
+            touchStatus.className = 'badge bg-info';
+        } else {
+            touchStatus.textContent = 'Mouse/Keyboard';
+            touchStatus.className = 'badge bg-warning';
+        }
+        
+        // Orientation status
+        if (ResponsiveUtils.isLandscape()) {
+            orientationStatus.textContent = 'Landscape';
+            orientationStatus.className = 'badge bg-primary';
+        } else {
+            orientationStatus.textContent = 'Portrait';
+            orientationStatus.className = 'badge bg-info';
+        }
+    }
+    
+    function updateModalInfo() {
+        const deviceInfo = document.getElementById('deviceInfo');
+        const screenInfo = document.getElementById('screenInfo');
+        
+        if (deviceInfo) {
+            deviceInfo.innerHTML = `
+                <li>User Agent: ${navigator.userAgent.substring(0, 50)}...</li>
+                <li>Platform: ${navigator.platform}</li>
+                <li>Touch Points: ${navigator.maxTouchPoints || 0}</li>
+                <li>Online: ${navigator.onLine ? 'Yes' : 'No'}</li>
+            `;
+        }
+        
+        if (screenInfo) {
+            screenInfo.innerHTML = `
+                <li>Screen: ${screen.width} x ${screen.height}</li>
+                <li>Window: ${window.innerWidth} x ${window.innerHeight}</li>
+                <li>Device Pixel Ratio: ${window.devicePixelRatio}</li>
+                <li>Color Depth: ${screen.colorDepth} bits</li>
+            `;
+        }
+    }
+    
+    // Initial update
+    updateDeviceInfo();
+    updateModalInfo();
+    
+    // Update on resize and orientation change
+    window.addEventListener('resize', updateDeviceInfo);
+    window.addEventListener('orientationchange', function() {
+        setTimeout(updateDeviceInfo, 100);
+    });
+    
+    // Update modal info when modal is shown
+    document.getElementById('responsiveModal').addEventListener('shown.bs.modal', updateModalInfo);
+});
+</script>
+{% endblock %}

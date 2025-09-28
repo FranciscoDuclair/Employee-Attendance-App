@@ -1,0 +1,920 @@
+{% extends 'leave/base_leave.html' %}
+{% load humanize %}
+
+{% block leave_title %}Team Leave Requests{% endblock %}
+{% block page_heading %}Team Leave Requests{% endblock %}
+
+{% block page_actions %}
+<div class="d-flex">
+    <div class="dropdown me-2">
+        <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="filterDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="fas fa-filter me-1"></i>
+            {% if status_filter %}{{ status_filter|title }}{% else %}All Statuses{% endif %}
+        </button>
+        <ul class="dropdown-menu" aria-labelledby="filterDropdown">
+            <li><a class="dropdown-item {% if not status_filter %}active{% endif %}" href="?status=">All Statuses</a></li>
+            <li><hr class="dropdown-divider"></li>
+            <li><a class="dropdown-item {% if status_filter == 'pending' %}active{% endif %}" href="?status=pending">Pending</a></li>
+            <li><a class="dropdown-item {% if status_filter == 'approved' %}active{% endif %}" href="?status=approved">Approved</a></li>
+            <li><a class="dropdown-item {% if status_filter == 'rejected' %}active{% endif %}" href="?status=rejected">Rejected</a></li>
+            <li><a class="dropdown-item {% if status_filter == 'cancelled' %}active{% endif %}" href="?status=cancelled">Cancelled</a></li>
+        </ul>
+    </div>
+    
+    <button type="button" class="btn btn-outline-primary me-2" data-bs-toggle="modal" data-bs-target="#dateRangeModal">
+        <i class="far fa-calendar-alt me-1"></i>
+        {% if start_date and end_date %}
+            {{ start_date|date:"M d, Y" }} - {{ end_date|date:"M d, Y" }}
+        {% else %}
+            Date Range
+        {% endif %}
+    </button>
+    
+    <div class="dropdown">
+        <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="exportDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="fas fa-download me-1"></i> Export
+        </button>
+        <ul class="dropdown-menu" aria-labelledby="exportDropdown">
+            <li><a class="dropdown-item" href="#"><i class="far fa-file-excel me-2"></i>Excel</a></li>
+            <li><a class="dropdown-item" href="#"><i class="far fa-file-pdf me-2"></i>PDF</a></li>
+            <li><a class="dropdown-item" href="#"><i class="fas fa-print me-2"></i>Print</a></li>
+        </ul>
+    </div>
+</div>
+{% endblock %}
+
+{% block leave_content %}
+<div class="row">
+    <div class="col-12">
+        <!-- Summary Cards -->
+        <div class="row mb-4">
+            <div class="col-xl-3 col-md-6 mb-4">
+                <div class="card border-left-primary shadow h-100 py-2">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                    Total Requests</div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800">{{ summary_stats.total }}</div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="fas fa-calendar fa-2x text-gray-300"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-xl-3 col-md-6 mb-4">
+                <div class="card border-left-success shadow h-100 py-2">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                    Approved</div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800">{{ summary_stats.approved }}</div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="fas fa-check-circle fa-2x text-gray-300"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-xl-3 col-md-6 mb-4">
+                <div class="card border-left-warning shadow h-100 py-2">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                    Pending Approval</div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800">{{ summary_stats.pending }}</div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="fas fa-clock fa-2x text-gray-300"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-xl-3 col-md-6 mb-4">
+                <div class="card border-left-danger shadow h-100 py-2">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">
+                                    Team Members</div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800">{{ team_members.count }}</div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="fas fa-users fa-2x text-gray-300"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Leave Requests Table -->
+        <div class="card shadow mb-4">
+            <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                <h6 class="m-0 font-weight-bold text-primary">Leave Requests</h6>
+                <div class="dropdown no-arrow">
+                    <a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end shadow animated--fade-in" aria-labelledby="dropdownMenuLink">
+                        <li><a class="dropdown-item" href="#"><i class="fas fa-sync-alt fa-sm fa-fw me-2 text-gray-400"></i> Refresh</a></li>
+                        <li><a class="dropdown-item" href="#"><i class="fas fa-file-export fa-sm fa-fw me-2 text-gray-400"></i> Export</a></li>
+                        <li><a class="dropdown-item" href="#"><i class="fas fa-print fa-sm fa-fw me-2 text-gray-400"></i> Print</a></li>
+                        <div class="dropdown-divider"></div>
+                        <li><a class="dropdown-item" href="#"><i class="fas fa-cog fa-sm fa-fw me-2 text-gray-400"></i> Settings</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="card-body">
+                {% if leave_requests %}
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-hover" id="dataTable" width="100%" cellspacing="0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Employee</th>
+                                    <th>Leave Type</th>
+                                    <th>Date</th>
+                                    <th>Duration</th>
+                                    <th>Status</th>
+                                    <th>Requested</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for request in leave_requests %}
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <img src="{{ request.user.profile.image.url|default:'/static/img/undraw_profile.svg' }}" 
+                                                 class="rounded-circle me-2" width="30" height="30" 
+                                                 alt="{{ request.user.get_full_name }}">
+                                            <div>
+                                                <div class="font-weight-bold">{{ request.user.get_full_name|default:request.user.username }}</div>
+                                                <div class="text-muted small">{{ request.user.department|default:'No Department' }}</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        {{ request.leave_type.name }}
+                                        {% if request.is_half_day %}
+                                            <span class="badge bg-info">Half Day</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {{ request.start_date|date:"M d" }} - {{ request.end_date|date:"M d, Y" }}
+                                    </td>
+                                    <td>
+                                        {{ request.total_days }} day{{ request.total_days|pluralize }}
+                                    </td>
+                                    <td>
+                                        {% if request.status == 'pending' %}
+                                            <span class="badge bg-warning">Pending</span>
+                                        {% elif request.status == 'approved' %}
+                                            <span class="badge bg-success">Approved</span>
+                                        {% elif request.status == 'rejected' %}
+                                            <span class="badge bg-danger">Rejected</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">{{ request.status|title }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ request.created_at|timesince }} ago</td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="{% url 'leave:detail' request.pk %}" class="btn btn-info" 
+                                               data-bs-toggle="tooltip" title="View Details">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            
+                                            {% if request.status == 'pending' %}
+                                            <a href="{% url 'leave:review_request' request.pk 'approve' %}" 
+                                               class="btn btn-success" data-bs-toggle="tooltip" title="Approve">
+                                                <i class="fas fa-check"></i>
+                                            </a>
+                                            <a href="{% url 'leave:review_request' request.pk 'reject' %}" 
+                                               class="btn btn-danger" data-bs-toggle="tooltip" title="Reject">
+                                                <i class="fas fa-times"></i>
+                                            </a>
+                                            {% endif %}
+                                            
+                                            {% if request.status == 'approved' and request.start_date > today %}
+                                            <a href="#" class="btn btn-warning" data-bs-toggle="tooltip" title="Revoke Approval">
+                                                <i class="fas fa-undo"></i>
+                                            </a>
+                                            {% endif %}
+                                            
+                                            <button type="button" class="btn btn-outline-secondary dropdown-toggle dropdown-toggle-split" 
+                                                    data-bs-toggle="dropdown" aria-expanded="false">
+                                                <span class="visually-hidden">Toggle Dropdown</span>
+                                            </button>
+                                            <ul class="dropdown-menu dropdown-menu-end">
+                                                <li><a class="dropdown-item" href="#">
+                                                    <i class="fas fa-envelope me-2"></i>Send Message
+                                                </a></li>
+                                                <li><a class="dropdown-item" href="#">
+                                                    <i class="fas fa-calendar-alt me-2"></i>Add to Calendar
+                                                </a></li>
+                                                <li><a class="dropdown-item" href="#">
+                                                    <i class="fas fa-user-clock me-2"></i>Request Cover
+                                                </a></li>
+                                                <li><hr class="dropdown-divider"></li>
+                                                {% if request.user == user or user.is_staff %}
+                                                <li><a class="dropdown-item text-danger" href="#">
+                                                    <i class="fas fa-trash-alt me-2"></i>Delete Request
+                                                </a></li>
+                                                {% endif %}
+                                            </ul>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <!-- Pagination -->
+                    {% if is_paginated %}
+                    <div class="d-flex justify-content-between align-items-center mt-4">
+                        <div class="text-muted small">
+                            Showing <span class="font-weight-bold">{{ page_obj.start_index }}</span> to 
+                            <span class="font-weight-bold">{{ page_obj.end_index }}</span> of 
+                            <span class="font-weight-bold">{{ paginator.count }}</span> entries
+                        </div>
+                        
+                        <nav aria-label="Page navigation">
+                            <ul class="pagination pagination-sm mb-0">
+                                {% if page_obj.has_previous %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page=1{% if status_filter %}&status={{ status_filter }}{% endif %}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}" aria-label="First">
+                                        <span aria-hidden="true">&laquo;&laquo;</span>
+                                    </a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}" aria-label="Previous">
+                                        <span aria-hidden="true">&laquo;</span>
+                                    </a>
+                                </li>
+                                {% endif %}
+                                
+                                {% for num in page_obj.paginator.page_range %}
+                                    {% if page_obj.number == num %}
+                                    <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                                    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ num }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}">
+                                            {{ num }}
+                                        </a>
+                                    </li>
+                                    {% endif %}
+                                {% endfor %}
+                                
+                                {% if page_obj.has_next %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}" aria-label="Next">
+                                        <span aria-hidden="true">&raquo;</span>
+                                    </a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}" aria-label="Last">
+                                        <span aria-hidden="true">&raquo;&raquo;</span>
+                                    </a>
+                                </li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+                    </div>
+                    {% endif %}
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-inbox fa-4x text-gray-300 mb-3"></i>
+                    <h5 class="text-gray-700">No leave requests found</h5>
+                    <p class="text-muted">
+                        {% if status_filter %}
+                            There are no {{ status_filter }} leave requests for your team.
+                        {% else %}
+                            Your team hasn't submitted any leave requests yet.
+                        {% endif %}
+                    </p>
+                    <a href="{% url 'leave:dashboard' %}" class="btn btn-primary mt-3">
+                        <i class="fas fa-arrow-left me-1"></i> Back to Dashboard
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Team Summary Card -->
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Team Summary</h6>
+            </div>
+            <div class="card-body">
+                <div class="text-center py-4">
+                    <i class="fas fa-users fa-3x text-gray-300 mb-3"></i>
+                    <h5 class="text-gray-700">Team Management</h5>
+                    <p class="text-muted">Managing {{ team_members.count }} team members and their leave requests.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Date Range Modal -->
+<div class="modal fade" id="dateRangeModal" tabindex="-1" aria-labelledby="dateRangeModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="dateRangeModalLabel">Filter by Date Range</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="get" id="dateRangeForm">
+                <div class="modal-body">
+                    <input type="hidden" name="status" value="{{ status_filter }}">
+                    
+                    <div class="mb-3">
+                        <label for="start_date" class="form-label">Start Date</label>
+                        <input type="date" class="form-control" id="start_date" name="start_date" 
+                               value="{{ start_date|date:'Y-m-d' }}">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="end_date" class="form-label">End Date</label>
+                        <input type="date" class="form-control" id="end_date" name="end_date" 
+                               value="{{ end_date|date:'Y-m-d' }}">
+                    </div>
+                    
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="resetDates" name="reset_dates">
+                        <label class="form-check-label" for="resetDates">Clear date filter</label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Apply Filter</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Bulk Actions Modal -->
+<div class="modal fade" id="bulkActionsModal" tabindex="-1" aria-labelledby="bulkActionsModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="bulkActionsModalLabel">Bulk Actions</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label for="bulkAction" class="form-label">Select Action</label>
+                    <select class="form-select" id="bulkAction">
+                        <option value="">Choose an action...</option>
+                        <option value="approve">Approve Selected</option>
+                        <option value="reject">Reject Selected</option>
+                        <option value="delete">Delete Selected</option>
+                        <option value="export">Export Selected</option>
+                    </select>
+                </div>
+                
+                <div id="bulkActionOptions" style="display: none;">
+                    <div class="mb-3" id="rejectReasonField" style="display: none;">
+                        <label for="rejectReason" class="form-label">Reason for Rejection</label>
+                        <textarea class="form-control" id="rejectReason" rows="3" placeholder="Please provide a reason for rejection..."></textarea>
+                    </div>
+                    
+                    <div class="mb-3" id="exportFormatField" style="display: none;">
+                        <label class="form-label">Export Format</label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="exportFormat" id="exportExcel" value="excel" checked>
+                            <label class="form-check-label" for="exportExcel">
+                                Excel (.xlsx)
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="exportFormat" id="exportPdf" value="pdf">
+                            <label class="form-check-label" for="exportPdf">
+                                PDF (.pdf)
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="exportFormat" id="exportCsv" value="csv">
+                            <label class="form-check-label" for="exportCsv">
+                                CSV (.csv)
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="alert alert-info mt-3" id="selectedCountAlert">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <span id="selectedCountText">0</span> requests selected
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="confirmBulkAction">Confirm</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+{{ block.super }}
+<style>
+    /* Custom styles for the team requests page */
+    .table th {
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 0.7rem;
+        letter-spacing: 0.5px;
+    }
+    
+    .table td {
+        vertical-align: middle;
+    }
+    
+    .badge {
+        font-weight: 500;
+        padding: 0.35em 0.65em;
+    }
+    
+    .progress {
+        height: 5px;
+        border-radius: 2.5px;
+        background-color: #f0f0f0;
+    }
+    
+    .progress-bar {
+        border-radius: 2.5px;
+    }
+    
+    .timeline {
+        position: relative;
+        padding-left: 2rem;
+        margin: 0 0 0 1rem;
+        border-left: 2px solid #e9ecef;
+    }
+    
+    .timeline-item {
+        position: relative;
+        padding-bottom: 1.5rem;
+    }
+    
+    .timeline-marker {
+        position: absolute;
+        left: -2.5rem;
+        width: 2rem;
+        text-align: center;
+        color: #4e73df;
+    }
+    
+    .timeline-content {
+        padding-left: 1rem;
+        padding-bottom: 1.5rem;
+        border-bottom: 1px solid #f0f0f0;
+    }
+    
+    .timeline-item:last-child .timeline-content {
+        border-bottom: none;
+    }
+    
+    /* Status badge colors */
+    .bg-pending { background-color: #f6c23e !important; }
+    .bg-approved { background-color: #1cc88a !important; }
+    .bg-rejected { background-color: #e74a3b !important; }
+    .bg-cancelled { background-color: #6c757d !important; }
+    
+    /* Custom scrollbar for tables */
+    .table-responsive::-webkit-scrollbar {
+        height: 8px;
+    }
+    
+    .table-responsive::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 4px;
+    }
+    
+    .table-responsive::-webkit-scrollbar-thumb {
+        background: #888;
+        border-radius: 4px;
+    }
+    
+    .table-responsive::-webkit-scrollbar-thumb:hover {
+        background: #555;
+    }
+    
+    /* Hover effects */
+    .table-hover tbody tr {
+        transition: all 0.2s ease;
+    }
+    
+    .table-hover tbody tr:hover {
+        background-color: rgba(78, 115, 223, 0.05);
+    }
+    
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        .table-responsive {
+            border: 0;
+        }
+        
+        .table thead {
+            display: none;
+        }
+        
+        .table, .table tbody, .table tr, .table td {
+            display: block;
+            width: 100%;
+        }
+        
+        .table tr {
+            margin-bottom: 1.5rem;
+            border: 1px solid #e3e6f0;
+            border-radius: 0.35rem;
+        }
+        
+        .table td {
+            text-align: right;
+            padding-left: 50%;
+            position: relative;
+            border-bottom: 1px solid #e3e6f0;
+        }
+        
+        .table td::before {
+            content: attr(data-label);
+            position: absolute;
+            left: 1rem;
+            width: 45%;
+            text-align: left;
+            font-weight: bold;
+            text-transform: uppercase;
+            font-size: 0.7rem;
+            color: #5a5c69;
+        }
+        
+        .table td:last-child {
+            border-bottom: 0;
+        }
+        
+        .btn-group {
+            width: 100%;
+            display: flex;
+            justify-content: flex-end;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+{{ block.super }}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize DataTable
+    const dataTable = $('#dataTable').DataTable({
+        responsive: true,
+        dom: "<'row'<'col-sm-12 col-md-6'l><'col-sm-12 col-md-6'f>>" +
+             "<'row'<'col-sm-12'tr>>" +
+             "<'row'<'col-sm-12 col-md-5'i><'col-sm-12 col-md-7'p>>",
+        language: {
+            search: "_INPUT_",
+            searchPlaceholder: "Search...",
+            lengthMenu: "Show _MENU_ entries",
+            info: "Showing _START_ to _END_ of _TOTAL_ entries",
+            infoEmpty: "No entries found",
+            infoFiltered: "(filtered from _MAX_ total entries)",
+            paginate: {
+                first: "First",
+                last: "Last",
+                next: "Next",
+                previous: "Previous"
+            }
+        },
+        columnDefs: [
+            { orderable: false, targets: -1 }, // Disable sorting on actions column
+            { responsivePriority: 1, targets: 0 }, // Employee column
+            { responsivePriority: 2, targets: -1 }, // Actions column
+            { responsivePriority: 3, targets: 2 }, // Date column
+            { responsivePriority: 4, targets: 1 }, // Leave Type column
+            { responsivePriority: 5, targets: 3 }, // Duration column
+            { responsivePriority: 6, targets: 4 }, // Status column
+            { responsivePriority: 7, targets: 5 }  // Requested column
+        ]
+    });
+    
+    // Initialize Leave Balance DataTable
+    const leaveBalanceTable = $('#leaveBalanceTable').DataTable({
+        responsive: true,
+        dom: "<'row'<'col-sm-12 col-md-6'l><'col-sm-12 col-md-6'f>>" +
+             "<'row'<'col-sm-12'tr>>" +
+             "<'row'<'col-sm-12 col-md-5'i><'col-sm-12 col-md-7'p>>",
+        scrollX: true,
+        language: {
+            search: "_INPUT_",
+            searchPlaceholder: "Search employees...",
+            lengthMenu: "Show _MENU_ entries",
+            info: "Showing _START_ to _END_ of _TOTAL_ employees",
+            infoEmpty: "No employees found",
+            infoFiltered: "(filtered from _MAX_ total employees)",
+            paginate: {
+                first: "First",
+                last: "Last",
+                next: "Next",
+                previous: "Previous"
+            }
+        },
+        columnDefs: [
+            { orderable: false, targets: -1 } // Disable sorting on last column
+        ]
+    });
+    
+    // Initialize tooltips
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+    
+    // Handle date range form submission
+    const dateRangeForm = document.getElementById('dateRangeForm');
+    if (dateRangeForm) {
+        dateRangeForm.addEventListener('submit', function(e) {
+            const resetDates = document.getElementById('resetDates').checked;
+            if (resetDates) {
+                // Remove date parameters from the form submission
+                const startDateInput = document.getElementById('start_date');
+                const endDateInput = document.getElementById('end_date');
+                startDateInput.disabled = true;
+                endDateInput.disabled = true;
+                startDateInput.value = '';
+                endDateInput.value = '';
+            }
+        });
+    }
+    
+    // Handle bulk actions
+    const bulkActionSelect = document.getElementById('bulkAction');
+    const bulkActionOptions = document.getElementById('bulkActionOptions');
+    const rejectReasonField = document.getElementById('rejectReasonField');
+    const exportFormatField = document.getElementById('exportFormatField');
+    const selectedCountText = document.getElementById('selectedCountText');
+    const confirmBulkActionBtn = document.getElementById('confirmBulkAction');
+    
+    if (bulkActionSelect && bulkActionOptions && confirmBulkActionBtn) {
+        // Show/hide additional fields based on selected action
+        bulkActionSelect.addEventListener('change', function() {
+            const action = this.value;
+            
+            // Hide all option fields first
+            bulkActionOptions.style.display = 'none';
+            rejectReasonField.style.display = 'none';
+            exportFormatField.style.display = 'none';
+            
+            if (action === 'reject') {
+                bulkActionOptions.style.display = 'block';
+                rejectReasonField.style.display = 'block';
+                confirmBulkActionBtn.classList.remove('btn-primary', 'btn-success', 'btn-danger');
+                confirmBulkActionBtn.classList.add('btn-danger');
+                confirmBulkActionBtn.textContent = 'Reject Selected';
+            } 
+            else if (action === 'approve') {
+                bulkActionOptions.style.display = 'none';
+                confirmBulkActionBtn.classList.remove('btn-primary', 'btn-success', 'btn-danger');
+                confirmBulkActionBtn.classList.add('btn-success');
+                confirmBulkActionBtn.textContent = 'Approve Selected';
+            }
+            else if (action === 'export') {
+                bulkActionOptions.style.display = 'block';
+                exportFormatField.style.display = 'block';
+                confirmBulkActionBtn.classList.remove('btn-primary', 'btn-success', 'btn-danger');
+                confirmBulkActionBtn.classList.add('btn-primary');
+                confirmBulkActionBtn.textContent = 'Export Selected';
+            }
+            else if (action === 'delete') {
+                bulkActionOptions.style.display = 'none';
+                confirmBulkActionBtn.classList.remove('btn-primary', 'btn-success', 'btn-danger');
+                confirmBulkActionBtn.classList.add('btn-danger');
+                confirmBulkActionBtn.textContent = 'Delete Selected';
+            }
+            else {
+                confirmBulkActionBtn.classList.remove('btn-success', 'btn-danger');
+                confirmBulkActionBtn.classList.add('btn-primary');
+                confirmBulkActionBtn.textContent = 'Confirm';
+            }
+        });
+        
+        // Handle confirm button click
+        confirmBulkActionBtn.addEventListener('click', function() {
+            const action = bulkActionSelect.value;
+            const selectedRows = dataTable.rows('.selected').data();
+            
+            if (selectedRows.length === 0) {
+                alert('Please select at least one leave request.');
+                return;
+            }
+            
+            // Get the selected request IDs
+            const requestIds = [];
+            selectedRows.each(function(value, index) {
+                // Assuming the first column contains a link with the request ID in the URL
+                const requestId = $(value[0]).find('a').attr('href').split('/').filter(Boolean).pop();
+                if (requestId) {
+                    requestIds.push(requestId);
+                }
+            });
+            
+            if (requestIds.length === 0) {
+                alert('Could not process the selected requests. Please try again.');
+                return;
+            }
+            
+            // Show loading state
+            const originalText = this.innerHTML;
+            this.disabled = true;
+            this.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Processing...';
+            
+            // In a real application, you would make an AJAX request here
+            // For demonstration, we'll simulate a delay and show a success message
+            setTimeout(() => {
+                alert(`Successfully processed ${requestIds.length} leave requests.`);
+                
+                // Reset the button state
+                this.disabled = false;
+                this.innerHTML = originalText;
+                
+                // Close the modal
+                const modal = bootstrap.Modal.getInstance(document.getElementById('bulkActionsModal'));
+                if (modal) {
+                    modal.hide();
+                }
+                
+                // Refresh the page or update the table
+                // window.location.reload();
+            }, 1500);
+        });
+    }
+    
+    // Update selected count when checkboxes are toggled
+    if (dataTable) {
+        dataTable.on('select deselect', function() {
+            const selectedCount = dataTable.rows('.selected').count();
+            selectedCountText.textContent = `${selectedCount} request${selectedCount !== 1 ? 's' : ''} selected`;
+        });
+    }
+    
+    // Initialize date pickers
+    const startDateInput = document.getElementById('start_date');
+    const endDateInput = document.getElementById('end_date');
+    
+    if (startDateInput && endDateInput) {
+        // Set minimum date for end date when start date is selected
+        startDateInput.addEventListener('change', function() {
+            endDateInput.min = this.value;
+            if (endDateInput.value && new Date(endDateInput.value) < new Date(this.value)) {
+                endDateInput.value = this.value;
+            }
+        });
+        
+        // Set maximum date for start date when end date is selected
+        endDateInput.addEventListener('change', function() {
+            startDateInput.max = this.value;
+            if (startDateInput.value && new Date(startDateInput.value) > new Date(this.value)) {
+                startDateInput.value = this.value;
+            }
+        });
+    }
+    
+    // Initialize select all checkbox
+    const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+    if (selectAllCheckbox) {
+        selectAllCheckbox.addEventListener('change', function() {
+            const checkboxes = document.querySelectorAll('.request-checkbox');
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = this.checked;
+                const row = checkbox.closest('tr');
+                if (this.checked) {
+                    row.classList.add('table-active');
+                    dataTable.row(row).select();
+                } else {
+                    row.classList.remove('table-active');
+                    dataTable.row(row).deselect();
+                }
+            });
+        });
+    }
+    
+    // Handle individual checkbox changes
+    document.addEventListener('change', function(e) {
+        if (e.target && e.target.classList.contains('request-checkbox')) {
+            const row = e.target.closest('tr');
+            if (e.target.checked) {
+                row.classList.add('table-active');
+                dataTable.row(row).select();
+            } else {
+                row.classList.remove('table-active');
+                dataTable.row(row).deselect();
+                
+                // Uncheck select all if any checkbox is unchecked
+                if (selectAllCheckbox) {
+                    selectAllCheckbox.checked = false;
+                }
+            }
+        }
+    });
+    
+    // Handle row click for selection
+    dataTable.on('click', 'tbody tr', function(e) {
+        // Don't trigger selection if clicking on a link, button, or input
+        if (e.target.tagName === 'A' || e.target.tagName === 'BUTTON' || e.target.tagName === 'INPUT' || e.target.closest('a, button, input, .btn, .dropdown, .dropdown-menu')) {
+            return;
+        }
+        
+        const row = dataTable.row(this);
+        const checkbox = this.querySelector('.request-checkbox');
+        
+        if (checkbox) {
+            checkbox.checked = !checkbox.checked;
+            if (checkbox.checked) {
+                this.classList.add('table-active');
+                row.select();
+            } else {
+                this.classList.remove('table-active');
+                row.deselect();
+            }
+            
+            // Update select all checkbox state
+            if (selectAllCheckbox) {
+                const allChecked = document.querySelectorAll('.request-checkbox:not(:checked)').length === 0;
+                selectAllCheckbox.checked = allChecked;
+            }
+        }
+    });
+    
+    // Initialize the bulk actions modal
+    const bulkActionsModal = document.getElementById('bulkActionsModal');
+    if (bulkActionsModal) {
+        bulkActionsModal.addEventListener('show.bs.modal', function() {
+            const selectedCount = dataTable.rows('.selected').count();
+            selectedCountText.textContent = `${selectedCount} request${selectedCount !== 1 ? 's' : ''} selected`;
+        });
+    }
+});
+
+// Custom filter for DataTables to filter by date range
+$.fn.dataTable.ext.search.push(
+    function(settings, data, dataIndex) {
+        const startDate = $('#start_date').val();
+        const endDate = $('#end_date').val();
+        
+        if (!startDate && !endDate) {
+            return true;
+        }
+        
+        const dateStr = data[2]; // Assuming the date is in the 3rd column
+        if (!dateStr) return false;
+        
+        // Extract date range from the cell (format: "M d - M d, Y" or "M d - M d, Y")
+        const dateRange = dateStr.split(' - ');
+        if (dateRange.length !== 2) return false;
+        
+        // Handle the case where the year is only in the second part
+        const yearMatch = dateRange[1].match(/, (\d{4})$/);
+        const year = yearMatch ? yearMatch[1] : new Date().getFullYear();
+        
+        // Parse the start and end dates from the cell
+        const startDateStr = `${dateRange[0]}, ${year}`;
+        const endDateStr = dateRange[1].includes(',') ? dateRange[1] : `${dateRange[1]}, ${year}`;
+        
+        const cellStartDate = new Date(startDateStr);
+        const cellEndDate = new Date(endDateStr);
+        
+        // Parse the filter dates
+        const filterStartDate = startDate ? new Date(startDate) : null;
+        const filterEndDate = endDate ? new Date(endDate) : null;
+        
+        // Check if the date ranges overlap
+        if (filterStartDate && cellEndDate < filterStartDate) {
+            return false;
+        }
+        
+        if (filterEndDate && cellStartDate > filterEndDate) {
+            return false;
+        }
+        
+        return true;
+    }
+);
+</script>
+{% endblock %}

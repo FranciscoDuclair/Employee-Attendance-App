@@ -6,7 +6,10 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
 from django.contrib.auth import authenticate
 from django.db.models import Q
-from django_filters.rest_framework import DjangoFilterBackend
+try:
+    from django_filters.rest_framework import DjangoFilterBackend
+except ImportError:
+    DjangoFilterBackend = None
 from rest_framework import filters
 
 from .models import User
@@ -95,8 +98,8 @@ class UserListView(generics.ListAPIView):
     """List all users (HR/Admin only)"""
     serializer_class = UserListSerializer
     permission_classes = [permissions.IsAuthenticated]
-    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['role', 'department', 'is_active']
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter] if DjangoFilterBackend else [filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields = ['role', 'department', 'is_active'] if DjangoFilterBackend else []
     search_fields = ['first_name', 'last_name', 'employee_id', 'email']
     ordering_fields = ['created_at', 'employee_id', 'first_name']
     ordering = ['employee_id']

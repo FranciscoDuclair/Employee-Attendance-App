@@ -1,34 +1,27 @@
-from django.urls import path, include
-from rest_framework.routers import DefaultRouter
-
-from .views import (
-    CheckInView, CheckOutView, FaceRecognitionView, ManualAttendanceView,
-    AttendanceHistoryView, AttendanceStatsView, AttendanceListView,
-    AttendanceDetailView, today_attendance, bulk_attendance_approval
-)
-
-# Create router for ViewSets
-router = DefaultRouter()
+from django.urls import path
+from . import views
 
 urlpatterns = [
-    # Basic attendance endpoints
-    path('check-in/', CheckInView.as_view(), name='check_in'),
-    path('check-out/', CheckOutView.as_view(), name='check_out'),
-    path('face-recognition/', FaceRecognitionView.as_view(), name='face_recognition'),
+    # Attendance records
+    path('', views.AttendanceListView.as_view(), name='attendance-list'),
     
-    # Manual attendance (HR/Admin only)
-    path('manual/', ManualAttendanceView.as_view(), name='manual_attendance'),
+    # Check-in/out endpoints with face verification
+    path('checkin/', views.CheckInView.as_view(), name='checkin'),
+    path('checkout/', views.CheckOutView.as_view(), name='checkout'),
     
-    # History and statistics
-    path('history/', AttendanceHistoryView.as_view(), name='attendance_history'),
-    path('stats/', AttendanceStatsView.as_view(), name='attendance_stats'),
-    path('today/', today_attendance, name='today_attendance'),
+    # Today's attendance
+    path('today/', views.today_attendance, name='today-attendance'),
     
-    # Management endpoints (HR/Admin only)
-    path('list/', AttendanceListView.as_view(), name='attendance_list'),
-    path('<int:pk>/', AttendanceDetailView.as_view(), name='attendance_detail'),
-    path('bulk-approval/', bulk_attendance_approval, name='bulk_approval'),
+    # Face recognition management
+    path('face-setup/', views.setup_face_recognition, name='face-setup'),
+    path('face-status/', views.face_recognition_status, name='face-status'),
+    path('face-remove/', views.remove_face_recognition, name='face-remove'),
     
-    # Include router URLs
-    path('', include(router.urls)),
+    # Deprecated face recognition endpoints (kept for backward compatibility)
+    path('face-checkin/', views.face_recognition_checkin, name='face-checkin-deprecated'),
+    path('face-checkout/', views.face_recognition_checkout, name='face-checkout-deprecated'),
+    
+    # Attendance summary and analytics
+    path('summary/', views.attendance_summary, name='attendance-summary'),
+    path('analytics/', views.attendance_analytics, name='attendance-analytics'),
 ]

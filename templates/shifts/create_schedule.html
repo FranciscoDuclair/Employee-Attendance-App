@@ -1,0 +1,224 @@
+{% extends 'dashboard/base_dashboard.html' %}
+{% load humanize %}
+
+{% block title %}Create Schedule - {{ block.super }}{% endblock %}
+
+{% block dashboard_content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <h1 class="h3 mb-0 text-gray-800">Create New Schedule</h1>
+            <a href="{% url 'shifts:schedule_team' %}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-1"></i>Back to Team Schedule
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Schedule Details</h6>
+            </div>
+            <div class="card-body">
+                <form method="post" id="scheduleForm">
+                    {% csrf_token %}
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="employee" class="form-label">Employee <span class="text-danger">*</span></label>
+                            <select class="form-select" id="employee" name="employee" required>
+                                <option value="">Select Employee</option>
+                                {% for member in team_members %}
+                                <option value="{{ member.id }}">
+                                    {{ member.get_full_name|default:member.username }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="shift" class="form-label">Shift <span class="text-danger">*</span></label>
+                            <select class="form-select" id="shift" name="shift" required>
+                                <option value="">Select Shift</option>
+                                {% for shift in shifts %}
+                                <option value="{{ shift.id }}" 
+                                        data-start="{{ shift.start_time|time:'H:i' }}" 
+                                        data-end="{{ shift.end_time|time:'H:i' }}"
+                                        data-duration="{{ shift.duration_hours }}">
+                                    {{ shift.name }} ({{ shift.start_time|time:"H:i" }} - {{ shift.end_time|time:"H:i" }})
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="date" class="form-label">Date <span class="text-danger">*</span></label>
+                            <input type="date" class="form-control" id="date" name="date" 
+                                   min="{{ today|date:'Y-m-d' }}" required>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Shift Duration</label>
+                            <div class="form-control-plaintext" id="shiftDuration">
+                                Select a shift to see duration
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="notes" class="form-label">Notes (Optional)</label>
+                        <textarea class="form-control" id="notes" name="notes" rows="3" 
+                                  placeholder="Add any additional notes or instructions..."></textarea>
+                    </div>
+                    
+                    <div class="d-flex justify-content-end">
+                        <button type="button" class="btn btn-secondary me-2" onclick="history.back()">Cancel</button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-1"></i>Create Schedule
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <!-- Quick Info -->
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Quick Info</h6>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <h6 class="text-gray-800">Team Members</h6>
+                    <p class="text-muted small mb-0">{{ team_members.count }} employee{{ team_members.count|pluralize }} under your management</p>
+                </div>
+                
+                <div class="mb-3">
+                    <h6 class="text-gray-800">Available Shifts</h6>
+                    <p class="text-muted small mb-0">{{ shifts.count }} active shift{{ shifts.count|pluralize }} available</p>
+                </div>
+                
+                <div class="alert alert-info" role="alert">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <strong>Note:</strong> Each employee can only have one schedule per day.
+                </div>
+            </div>
+        </div>
+        
+        <!-- Available Shifts -->
+        {% if shifts %}
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Available Shifts</h6>
+            </div>
+            <div class="card-body">
+                {% for shift in shifts %}
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <div>
+                        <div class="font-weight-bold">{{ shift.name }}</div>
+                        <div class="text-muted small">
+                            {{ shift.start_time|time:"H:i" }} - {{ shift.end_time|time:"H:i" }}
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <span class="badge bg-light text-dark">{{ shift.duration_hours }}h</span>
+                    </div>
+                </div>
+                {% if not forloop.last %}<hr class="my-2">{% endif %}
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{{ block.super }}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const shiftSelect = document.getElementById('shift');
+    const durationDisplay = document.getElementById('shiftDuration');
+    
+    shiftSelect.addEventListener('change', function() {
+        const selectedOption = this.options[this.selectedIndex];
+        if (selectedOption.value) {
+            const startTime = selectedOption.dataset.start;
+            const endTime = selectedOption.dataset.end;
+            const duration = selectedOption.dataset.duration;
+            
+            durationDisplay.innerHTML = `
+                <div class="d-flex justify-content-between">
+                    <span><strong>Time:</strong> ${startTime} - ${endTime}</span>
+                    <span><strong>Duration:</strong> ${duration}h</span>
+                </div>
+            `;
+        } else {
+            durationDisplay.textContent = 'Select a shift to see duration';
+        }
+    });
+    
+    // Form validation
+    const form = document.getElementById('scheduleForm');
+    form.addEventListener('submit', function(e) {
+        const employee = document.getElementById('employee').value;
+        const shift = document.getElementById('shift').value;
+        const date = document.getElementById('date').value;
+        
+        if (!employee || !shift || !date) {
+            e.preventDefault();
+            alert('Please fill in all required fields.');
+            return false;
+        }
+        
+        // Check if date is not in the past
+        const selectedDate = new Date(date);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        if (selectedDate < today) {
+            e.preventDefault();
+            alert('Cannot create schedule for past dates.');
+            return false;
+        }
+    });
+});
+</script>
+{% endblock %}
+
+{% block extra_css %}
+{{ block.super }}
+<style>
+    .form-label {
+        font-weight: 600;
+        color: #5a5c69;
+    }
+    
+    .form-control:focus,
+    .form-select:focus {
+        border-color: #4e73df;
+        box-shadow: 0 0 0 0.2rem rgba(78, 115, 223, 0.25);
+    }
+    
+    .card {
+        border: none;
+        border-radius: 0.35rem;
+    }
+    
+    .alert-info {
+        background-color: #d1ecf1;
+        border-color: #bee5eb;
+        color: #0c5460;
+    }
+    
+    .badge {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.5rem;
+    }
+</style>
+{% endblock %}

@@ -1,0 +1,833 @@
+/* 
+ * Comprehensive Responsive Design for Employee Attendance System
+ * Supporting 10+ device types and screen sizes
+ */
+
+/* ===== BASE RESPONSIVE SETUP ===== */
+* {
+    box-sizing: border-box;
+}
+
+html {
+    font-size: 16px; /* Base font size */
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    line-height: 1.6;
+    overflow-x: hidden;
+}
+
+/* ===== CONTAINER AND LAYOUT ===== */
+.container-fluid {
+    padding-left: 15px;
+    padding-right: 15px;
+}
+
+.row {
+    margin-left: -15px;
+    margin-right: -15px;
+}
+
+.col, .col-1, .col-2, .col-3, .col-4, .col-5, .col-6,
+.col-7, .col-8, .col-9, .col-10, .col-11, .col-12,
+.col-sm, .col-sm-1, .col-sm-2, .col-sm-3, .col-sm-4, .col-sm-5, .col-sm-6,
+.col-sm-7, .col-sm-8, .col-sm-9, .col-sm-10, .col-sm-11, .col-sm-12,
+.col-md, .col-md-1, .col-md-2, .col-md-3, .col-md-4, .col-md-5, .col-md-6,
+.col-md-7, .col-md-8, .col-md-9, .col-md-10, .col-md-11, .col-md-12,
+.col-lg, .col-lg-1, .col-lg-2, .col-lg-3, .col-lg-4, .col-lg-5, .col-lg-6,
+.col-lg-7, .col-lg-8, .col-lg-9, .col-lg-10, .col-lg-11, .col-lg-12,
+.col-xl, .col-xl-1, .col-xl-2, .col-xl-3, .col-xl-4, .col-xl-5, .col-xl-6,
+.col-xl-7, .col-xl-8, .col-xl-9, .col-xl-10, .col-xl-11, .col-xl-12,
+.col-xxl, .col-xxl-1, .col-xxl-2, .col-xxl-3, .col-xxl-4, .col-xxl-5, .col-xxl-6,
+.col-xxl-7, .col-xxl-8, .col-xxl-9, .col-xxl-10, .col-xxl-11, .col-xxl-12 {
+    padding-left: 15px;
+    padding-right: 15px;
+}
+
+/* ===== DEVICE-SPECIFIC BREAKPOINTS ===== */
+
+/* 1. Small Mobile Phones (320px - 480px) */
+@media (max-width: 480px) {
+    html { font-size: 14px; }
+    
+    .container-fluid { padding: 10px; }
+    
+    .card {
+        margin-bottom: 15px;
+        border-radius: 8px;
+    }
+    
+    .btn {
+        padding: 8px 12px;
+        font-size: 0.875rem;
+        margin-bottom: 5px;
+        width: 100%;
+    }
+    
+    .btn-group {
+        flex-direction: column;
+        width: 100%;
+    }
+    
+    .btn-group .btn {
+        border-radius: 4px !important;
+        margin-bottom: 5px;
+    }
+    
+    .table-responsive {
+        font-size: 0.8rem;
+    }
+    
+    .navbar-brand {
+        font-size: 1rem;
+    }
+    
+    .h1, h1 { font-size: 1.5rem; }
+    .h2, h2 { font-size: 1.3rem; }
+    .h3, h3 { font-size: 1.1rem; }
+    
+    .modal-dialog {
+        margin: 10px;
+        max-width: calc(100% - 20px);
+    }
+    
+    .face-camera {
+        height: 200px;
+    }
+    
+    .metric-card {
+        margin-bottom: 10px;
+    }
+    
+    .metric-card .fa-2x {
+        font-size: 1.5em !important;
+    }
+}
+
+/* 2. Large Mobile Phones (481px - 767px) */
+@media (min-width: 481px) and (max-width: 767px) {
+    html { font-size: 15px; }
+    
+    .container-fluid { padding: 12px; }
+    
+    .btn-group {
+        flex-wrap: wrap;
+    }
+    
+    .btn-group .btn {
+        flex: 1 1 auto;
+        min-width: 120px;
+    }
+    
+    .table-responsive {
+        font-size: 0.85rem;
+    }
+    
+    .face-camera {
+        height: 250px;
+    }
+    
+    .card-columns {
+        column-count: 1;
+    }
+    
+    .navbar-nav {
+        text-align: center;
+    }
+    
+    .dropdown-menu {
+        width: 100%;
+        text-align: center;
+    }
+}
+
+/* 3. Tablets Portrait (768px - 991px) */
+@media (min-width: 768px) and (max-width: 991px) {
+    html { font-size: 15px; }
+    
+    .container-fluid { padding: 15px; }
+    
+    .card-columns {
+        column-count: 2;
+    }
+    
+    .btn-toolbar {
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+    
+    .btn-toolbar .btn-group {
+        margin: 5px;
+    }
+    
+    .face-camera {
+        height: 280px;
+    }
+    
+    .table-responsive {
+        font-size: 0.9rem;
+    }
+    
+    .sidebar {
+        width: 100%;
+        position: relative;
+        height: auto;
+    }
+    
+    .main-content {
+        margin-left: 0;
+        padding: 15px;
+    }
+    
+    .metric-card {
+        margin-bottom: 15px;
+    }
+    
+    .chart-container {
+        height: 300px;
+    }
+}
+
+/* 4. Tablets Landscape & Small Laptops (992px - 1199px) */
+@media (min-width: 992px) and (max-width: 1199px) {
+    html { font-size: 16px; }
+    
+    .card-columns {
+        column-count: 3;
+    }
+    
+    .face-camera {
+        height: 320px;
+    }
+    
+    .sidebar {
+        width: 250px;
+        position: fixed;
+        height: 100vh;
+    }
+    
+    .main-content {
+        margin-left: 250px;
+        padding: 20px;
+    }
+    
+    .chart-container {
+        height: 350px;
+    }
+    
+    .btn-group .btn {
+        min-width: 100px;
+    }
+}
+
+/* 5. Desktop & Large Laptops (1200px - 1399px) */
+@media (min-width: 1200px) and (max-width: 1399px) {
+    html { font-size: 16px; }
+    
+    .container-fluid { max-width: 1140px; }
+    
+    .card-columns {
+        column-count: 3;
+    }
+    
+    .face-camera {
+        height: 350px;
+    }
+    
+    .chart-container {
+        height: 400px;
+    }
+    
+    .sidebar {
+        width: 280px;
+    }
+    
+    .main-content {
+        margin-left: 280px;
+        padding: 25px;
+    }
+}
+
+/* 6. Large Desktop (1400px - 1919px) */
+@media (min-width: 1400px) and (max-width: 1919px) {
+    html { font-size: 17px; }
+    
+    .container-fluid { max-width: 1320px; }
+    
+    .card-columns {
+        column-count: 4;
+    }
+    
+    .face-camera {
+        height: 380px;
+    }
+    
+    .chart-container {
+        height: 450px;
+    }
+    
+    .sidebar {
+        width: 300px;
+    }
+    
+    .main-content {
+        margin-left: 300px;
+        padding: 30px;
+    }
+}
+
+/* 7. Ultra-Wide Desktop (1920px+) */
+@media (min-width: 1920px) {
+    html { font-size: 18px; }
+    
+    .container-fluid { max-width: 1800px; }
+    
+    .card-columns {
+        column-count: 5;
+    }
+    
+    .face-camera {
+        height: 400px;
+    }
+    
+    .chart-container {
+        height: 500px;
+    }
+    
+    .sidebar {
+        width: 320px;
+    }
+    
+    .main-content {
+        margin-left: 320px;
+        padding: 35px;
+    }
+}
+
+/* ===== ORIENTATION-SPECIFIC STYLES ===== */
+
+/* 8. Mobile Landscape */
+@media (max-height: 480px) and (orientation: landscape) {
+    .navbar {
+        padding: 5px 0;
+    }
+    
+    .navbar-brand {
+        font-size: 0.9rem;
+    }
+    
+    .card {
+        margin-bottom: 10px;
+    }
+    
+    .face-camera {
+        height: 150px;
+    }
+    
+    .modal-dialog {
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+    
+    .chart-container {
+        height: 200px;
+    }
+}
+
+/* 9. Tablet Landscape */
+@media (min-width: 768px) and (max-width: 1024px) and (orientation: landscape) {
+    .sidebar {
+        width: 200px;
+    }
+    
+    .main-content {
+        margin-left: 200px;
+        padding: 15px;
+    }
+    
+    .face-camera {
+        height: 250px;
+    }
+    
+    .chart-container {
+        height: 280px;
+    }
+}
+
+/* ===== COMPONENT-SPECIFIC RESPONSIVE STYLES ===== */
+
+/* Navigation */
+.navbar-toggler {
+    border: none;
+    padding: 4px 8px;
+}
+
+@media (max-width: 991px) {
+    .navbar-collapse {
+        background: rgba(0, 0, 0, 0.1);
+        margin-top: 10px;
+        padding: 15px;
+        border-radius: 8px;
+    }
+    
+    .navbar-nav .nav-link {
+        padding: 8px 15px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .navbar-nav .nav-link:last-child {
+        border-bottom: none;
+    }
+}
+
+/* Cards */
+.card {
+    border: 1px solid rgba(0, 0, 0, 0.125);
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+@media (max-width: 576px) {
+    .card {
+        border-radius: 6px;
+        margin-bottom: 15px;
+    }
+    
+    .card-header {
+        padding: 10px 15px;
+        font-size: 0.9rem;
+    }
+    
+    .card-body {
+        padding: 15px;
+    }
+}
+
+/* Tables */
+.table-responsive {
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+@media (max-width: 768px) {
+    .table-responsive table {
+        font-size: 0.8rem;
+    }
+    
+    .table-responsive th,
+    .table-responsive td {
+        padding: 8px 4px;
+        white-space: nowrap;
+    }
+    
+    .table-responsive .btn {
+        padding: 4px 8px;
+        font-size: 0.75rem;
+    }
+}
+
+/* Forms */
+.form-control, .form-select {
+    border-radius: 6px;
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+@media (max-width: 576px) {
+    .form-control, .form-select {
+        font-size: 16px; /* Prevents zoom on iOS */
+        padding: 10px 12px;
+    }
+    
+    .form-label {
+        font-size: 0.9rem;
+        font-weight: 600;
+    }
+    
+    .input-group {
+        flex-direction: column;
+    }
+    
+    .input-group .form-control {
+        border-radius: 6px !important;
+        margin-bottom: 5px;
+    }
+    
+    .input-group .btn {
+        border-radius: 6px !important;
+        width: 100%;
+    }
+}
+
+/* Buttons */
+.btn {
+    border-radius: 6px;
+    font-weight: 500;
+    transition: all 0.15s ease-in-out;
+    position: relative;
+    overflow: hidden;
+}
+
+.btn:before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.3);
+    transform: translate(-50%, -50%);
+    transition: width 0.3s, height 0.3s;
+}
+
+.btn:active:before {
+    width: 300px;
+    height: 300px;
+}
+
+@media (max-width: 576px) {
+    .btn {
+        padding: 10px 15px;
+        font-size: 0.9rem;
+        width: 100%;
+        margin-bottom: 8px;
+    }
+    
+    .btn-sm {
+        padding: 6px 10px;
+        font-size: 0.8rem;
+        width: auto;
+        margin-bottom: 5px;
+    }
+    
+    .btn-group {
+        width: 100%;
+        flex-direction: column;
+    }
+    
+    .btn-group .btn {
+        border-radius: 6px !important;
+        margin-bottom: 5px;
+    }
+    
+    .btn-toolbar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+}
+
+/* Modals */
+@media (max-width: 576px) {
+    .modal-dialog {
+        margin: 10px;
+        max-width: calc(100% - 20px);
+    }
+    
+    .modal-content {
+        border-radius: 8px;
+    }
+    
+    .modal-header {
+        padding: 15px;
+        border-bottom: 1px solid #dee2e6;
+    }
+    
+    .modal-body {
+        padding: 15px;
+        max-height: 60vh;
+        overflow-y: auto;
+    }
+    
+    .modal-footer {
+        padding: 15px;
+        flex-direction: column-reverse;
+    }
+    
+    .modal-footer .btn {
+        width: 100%;
+        margin: 2px 0;
+    }
+}
+
+/* Charts and Graphs */
+.chart-container {
+    position: relative;
+    width: 100%;
+    margin-bottom: 20px;
+}
+
+@media (max-width: 768px) {
+    .chart-container {
+        height: 250px !important;
+    }
+    
+    .chart-container canvas {
+        max-height: 250px !important;
+    }
+}
+
+/* Face Recognition Camera */
+.face-camera {
+    width: 100%;
+    border: 2px solid #dee2e6;
+    border-radius: 8px;
+    background: #f8f9fa;
+    object-fit: cover;
+}
+
+@media (max-width: 480px) {
+    .face-camera {
+        height: 200px;
+        border-radius: 6px;
+    }
+}
+
+@media (min-width: 481px) and (max-width: 767px) {
+    .face-camera {
+        height: 250px;
+    }
+}
+
+@media (min-width: 768px) and (max-width: 991px) {
+    .face-camera {
+        height: 300px;
+    }
+}
+
+@media (min-width: 992px) {
+    .face-camera {
+        height: 350px;
+        max-width: 500px;
+    }
+}
+
+/* Dashboard Metrics */
+.metric-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    cursor: pointer;
+}
+
+.metric-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+@media (max-width: 576px) {
+    .metric-card {
+        margin-bottom: 15px;
+    }
+    
+    .metric-card .card-body {
+        padding: 15px;
+        text-align: center;
+    }
+    
+    .metric-card .fa-2x {
+        font-size: 1.5em !important;
+    }
+    
+    .metric-card h3 {
+        font-size: 1.3rem;
+    }
+}
+
+/* Alerts and Notifications */
+.alert {
+    border-radius: 8px;
+    border: none;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+@media (max-width: 576px) {
+    .alert {
+        font-size: 0.9rem;
+        padding: 12px 15px;
+    }
+    
+    .alert .btn-close {
+        padding: 8px;
+    }
+}
+
+/* Pagination */
+@media (max-width: 576px) {
+    .pagination {
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+    
+    .pagination .page-item {
+        margin: 2px;
+    }
+    
+    .pagination .page-link {
+        padding: 6px 10px;
+        font-size: 0.8rem;
+    }
+}
+
+/* Breadcrumbs */
+@media (max-width: 576px) {
+    .breadcrumb {
+        font-size: 0.8rem;
+        padding: 8px 0;
+        margin-bottom: 15px;
+        flex-wrap: wrap;
+    }
+    
+    .breadcrumb-item + .breadcrumb-item::before {
+        padding: 0 0.3rem;
+    }
+}
+
+/* Utility Classes for Responsive Design */
+.text-responsive {
+    font-size: clamp(0.8rem, 2vw, 1.2rem);
+}
+
+.padding-responsive {
+    padding: clamp(10px, 3vw, 30px);
+}
+
+.margin-responsive {
+    margin: clamp(5px, 2vw, 20px);
+}
+
+/* Hide/Show elements based on screen size */
+@media (max-width: 576px) {
+    .d-mobile-none { display: none !important; }
+    .d-mobile-block { display: block !important; }
+    .d-mobile-inline { display: inline !important; }
+    .d-mobile-inline-block { display: inline-block !important; }
+    .d-mobile-flex { display: flex !important; }
+}
+
+@media (min-width: 577px) and (max-width: 768px) {
+    .d-tablet-none { display: none !important; }
+    .d-tablet-block { display: block !important; }
+    .d-tablet-inline { display: inline !important; }
+    .d-tablet-inline-block { display: inline-block !important; }
+    .d-tablet-flex { display: flex !important; }
+}
+
+@media (min-width: 769px) {
+    .d-desktop-none { display: none !important; }
+    .d-desktop-block { display: block !important; }
+    .d-desktop-inline { display: inline !important; }
+    .d-desktop-inline-block { display: inline-block !important; }
+    .d-desktop-flex { display: flex !important; }
+}
+
+/* Print Styles */
+@media print {
+    .no-print { display: none !important; }
+    
+    body { 
+        font-size: 12pt; 
+        line-height: 1.4;
+        color: #000;
+        background: #fff;
+    }
+    
+    .card {
+        border: 1px solid #000;
+        box-shadow: none;
+        page-break-inside: avoid;
+    }
+    
+    .btn {
+        display: none;
+    }
+    
+    .navbar {
+        display: none;
+    }
+    
+    .table {
+        border-collapse: collapse;
+    }
+    
+    .table th,
+    .table td {
+        border: 1px solid #000;
+        padding: 8px;
+    }
+}
+
+/* High DPI / Retina Display Support */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+    .face-camera {
+        image-rendering: -webkit-optimize-contrast;
+        image-rendering: crisp-edges;
+    }
+    
+    .card {
+        border-width: 0.5px;
+    }
+    
+    .btn {
+        border-width: 0.5px;
+    }
+}
+
+/* Dark Mode Support (if implemented) */
+@media (prefers-color-scheme: dark) {
+    .card {
+        background-color: #2d3748;
+        border-color: #4a5568;
+        color: #e2e8f0;
+    }
+    
+    .table {
+        color: #e2e8f0;
+    }
+    
+    .table-striped > tbody > tr:nth-of-type(odd) > td,
+    .table-striped > tbody > tr:nth-of-type(odd) > th {
+        background-color: #4a5568;
+    }
+}
+
+/* Accessibility Improvements */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+    
+    .card:hover {
+        transform: none;
+    }
+    
+    .btn:before {
+        display: none;
+    }
+}
+
+/* Focus indicators for keyboard navigation */
+.btn:focus,
+.form-control:focus,
+.form-select:focus {
+    outline: 2px solid #0d6efd;
+    outline-offset: 2px;
+}
+
+/* Ensure minimum touch target size (44px) */
+@media (max-width: 768px) {
+    .btn,
+    .form-control,
+    .form-select,
+    .nav-link,
+    .dropdown-item {
+        min-height: 44px;
+        min-width: 44px;
+    }
+}

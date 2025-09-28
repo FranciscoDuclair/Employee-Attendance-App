@@ -1,0 +1,416 @@
+{% extends 'leave/base_leave.html' %}
+{% load crispy_forms_tags %}
+
+{% block leave_title %}{% if object %}Edit{% else %}New{% endif %} Leave Request{% endblock %}
+{% block page_heading %}{% if object %}Edit{% else %}New{% endif %} Leave Request{% endblock %}
+
+{% block leave_content %}
+<div class="card shadow mb-4">
+    <div class="card-header py-3">
+        <h6 class="m-0 font-weight-bold text-primary">Leave Request Details</h6>
+    </div>
+    <div class="card-body">
+        <form method="post" id="leaveRequestForm">
+            {% csrf_token %}
+            
+            <div class="row">
+                <div class="col-md-6">
+                    {{ form.leave_type|as_crispy_field }}
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="date_range">Date Range*</label>
+                        <div class="input-group">
+                            {{ form.start_date }}
+                            <span class="input-group-text">to</span>
+                            {{ form.end_date }}
+                        </div>
+                        <small class="form-text text-muted">Select the start and end dates of your leave.</small>
+                        {% if form.start_date.errors or form.end_date.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.start_date.errors }}
+                                {{ form.end_date.errors }}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card mb-4">
+                        <div class="card-header py-2">
+                            <h6 class="m-0 font-weight-bold text-primary">Leave Duration</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="form-group">
+                                <label>Total Working Days</label>
+                                <input type="text" class="form-control" id="total_days" value="0" readonly>
+                                <small class="form-text text-muted">Weekends are automatically excluded.</small>
+                            </div>
+                            
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="half_day">
+                                <label class="form-check-label" for="half_day">
+                                    Half Day
+                                </label>
+                            </div>
+                            
+                            <div id="halfDayOptions" class="mt-2 ml-4" style="display: none;">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="half_day_period" id="first_half" value="first_half" checked>
+                                    <label class="form-check-label" for="first_half">
+                                        First Half (Morning)
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="half_day_period" id="second_half" value="second_half">
+                                    <label class="form-check-label" for="second_half">
+                                        Second Half (Afternoon)
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="card mb-4">
+                        <div class="card-header py-2">
+                            <h6 class="m-0 font-weight-bold text-primary">Leave Balance</h6>
+                        </div>
+                        <div class="card-body">
+                            <div id="leaveBalanceInfo">
+                                <p class="text-center text-muted my-4">
+                                    <i class="fas fa-info-circle"></i> Select a leave type to view balance
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                {{ form.reason|as_crispy_field }}
+                <small class="form-text text-muted">
+                    Please provide a detailed reason for your leave request.
+                    {% if requires_approval %}
+                        This request requires manager approval.
+                    {% else %}
+                        This leave type does not require approval.
+                    {% endif %}
+                </small>
+            </div>
+            
+            <div class="card mb-4" id="emergencyContactCard">
+                <div class="card-header py-2">
+                    <h6 class="m-0 font-weight-bold text-primary">Emergency Contact Information</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            {{ form.emergency_contact|as_crispy_field }}
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.emergency_phone|as_crispy_field }}
+                            <small class="form-text text-muted">Include country code if outside the country.</small>
+                        </div>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="sameAsProfile" checked>
+                        <label class="form-check-label" for="sameAsProfile">
+                            Use my profile contact information
+                        </label>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="alert alert-info">
+                <h6><i class="fas fa-info-circle"></i> Important Information</h6>
+                <ul class="mb-0">
+                    <li>Please submit your leave request at least <strong>3 working days</strong> in advance.</li>
+                    <li>For planned leaves exceeding 5 days, please inform your manager in advance.</li>
+                    <li>In case of emergency leave, please notify your manager immediately after submission.</li>
+                </ul>
+            </div>
+            
+            <div class="d-flex justify-content-between mt-4">
+                <a href="{% url 'leave:dashboard' %}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left me-1"></i> Back to Dashboard
+                </a>
+                <div>
+                    <button type="button" class="btn btn-outline-secondary me-2" id="saveDraftBtn">
+                        <i class="far fa-save me-1"></i> Save as Draft
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-paper-plane me-1"></i> Submit Request
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Leave Policy Modal -->
+<div class="modal fade" id="leavePolicyModal" tabindex="-1" aria-labelledby="leavePolicyModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="leavePolicyModalLabel">Leave Policy</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <h6>Annual Leave</h6>
+                <p>Employees are entitled to 20 working days of paid annual leave per year. Leave requests should be submitted at least 3 working days in advance.</p>
+                
+                <h6>Sick Leave</h6>
+                <p>Employees are entitled to 14 working days of paid sick leave per year. A medical certificate is required for leaves exceeding 3 consecutive days.</p>
+                
+                <h6>Maternity/Paternity Leave</h6>
+                <p>Female employees are entitled to 98 days of paid maternity leave. Male employees are entitled to 7 working days of paternity leave.</p>
+                
+                <h6>Bereavement Leave</h6>
+                <p>Employees are entitled to 3 working days of paid bereavement leave for the death of an immediate family member.</p>
+                
+                <h6>Unpaid Leave</h6>
+                <p>Unpaid leave may be granted at the discretion of management for up to 30 days per year.</p>
+                
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle"></i> This is a summary of the leave policy. Please refer to the employee handbook for complete details.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <a href="#" class="btn btn-primary">View Full Policy</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Save Draft Confirmation Modal -->
+<div class="modal fade" id="saveDraftModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Save as Draft</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to save this leave request as a draft? You can submit it later from your dashboard.</p>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="draftConfirmation">
+                    <label class="form-check-label" for="draftConfirmation">
+                        I understand that this request won't be processed until submitted
+                    </label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="confirmSaveDraft" disabled>Save Draft</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{{ block.super }}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize date pickers
+    const startDateInput = document.getElementById('id_start_date');
+    const endDateInput = document.getElementById('id_end_date');
+    const totalDaysInput = document.getElementById('total_days');
+    const halfDayCheckbox = document.getElementById('half_day');
+    const halfDayOptions = document.getElementById('halfDayOptions');
+    const leaveTypeSelect = document.getElementById('id_leave_type');
+    const leaveBalanceInfo = document.getElementById('leaveBalanceInfo');
+    const emergencyContactCard = document.getElementById('emergencyContactCard');
+    const sameAsProfileCheckbox = document.getElementById('sameAsProfile');
+    const emergencyContactInput = document.getElementById('id_emergency_contact');
+    const emergencyPhoneInput = document.getElementById('id_emergency_phone');
+    const saveDraftBtn = document.getElementById('saveDraftBtn');
+    const confirmSaveDraft = document.getElementById('confirmSaveDraft');
+    const draftConfirmation = document.getElementById('draftConfirmation');
+    const saveDraftModal = new bootstrap.Modal(document.getElementById('saveDraftModal'));
+    
+    // Calculate working days between two dates (excluding weekends)
+    function calculateWorkingDays(startDate, endDate) {
+        if (!startDate || !endDate) return 0;
+        
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+        
+        if (start > end) return 0;
+        
+        let count = 0;
+        const current = new Date(start);
+        
+        while (current <= end) {
+            const day = current.getDay();
+            if (day !== 0 && day !== 6) { // Skip weekends (0=Sunday, 6=Saturday)
+                count++;
+            }
+            current.setDate(current.getDate() + 1);
+        }
+        
+        return count;
+    }
+    
+    // Update total days when dates change
+    function updateTotalDays() {
+        const startDate = startDateInput.value;
+        const endDate = endDateInput.value;
+        
+        if (startDate && endDate) {
+            let days = calculateWorkingDays(startDate, endDate);
+            
+            // Adjust for half day
+            if (halfDayCheckbox.checked) {
+                days = days > 0 ? 0.5 : 0;
+            }
+            
+            totalDaysInput.value = days;
+        } else {
+            totalDaysInput.value = '0';
+        }
+    }
+    
+    // Toggle half day options
+    halfDayCheckbox.addEventListener('change', function() {
+        halfDayOptions.style.display = this.checked ? 'block' : 'none';
+        updateTotalDays();
+    });
+    
+    // Update end date minimum based on start date
+    startDateInput.addEventListener('change', function() {
+        if (endDateInput.value && new Date(endDateInput.value) < new Date(this.value)) {
+            endDateInput.value = this.value;
+        }
+        updateTotalDays();    
+    });
+    
+    endDateInput.addEventListener('change', updateTotalDays);
+    
+    // Load leave balance when leave type changes
+    leaveTypeSelect.addEventListener('change', function() {
+        const leaveTypeId = this.value;
+        
+        if (!leaveTypeId) {
+            leaveBalanceInfo.innerHTML = `
+                <p class="text-center text-muted my-4">
+                    <i class="fas fa-info-circle"></i> Select a leave type to view balance
+                </p>
+            `;
+            return;
+        }
+        
+        // In a real app, you would fetch this data from your API
+        // This is a mock implementation
+        const leaveTypes = {
+            '1': { name: 'Annual Leave', max_days: 20, used_days: 5 },
+            '2': { name: 'Sick Leave', max_days: 14, used_days: 2 },
+            '3': { name: 'Maternity Leave', max_days: 98, used_days: 0 },
+            '4': { name: 'Paternity Leave', max_days: 7, used_days: 0 },
+            '5': { name: 'Bereavement Leave', max_days: 3, used_days: 0 },
+            '6': { name: 'Unpaid Leave', max_days: 30, used_days: 0 },
+        };
+        
+        const leaveType = leaveTypes[leaveTypeId] || { name: 'Unknown', max_days: 0, used_days: 0 };
+        const remainingDays = leaveType.max_days - leaveType.used_days;
+        const percentage = (remainingDays / leaveType.max_days) * 100;
+        
+        leaveBalanceInfo.innerHTML = `
+            <h6 class="mb-3">${leaveType.name} Balance</h6>
+            <div class="d-flex justify-content-between mb-1">
+                <span>Used: ${leaveType.used_days} days</span>
+                <span>Remaining: ${remainingDays} days</span>
+                <span>Total: ${leaveType.max_days} days</span>
+            </div>
+            <div class="progress mb-3" style="height: 10px;">
+                <div class="progress-bar ${percentage > 50 ? 'bg-success' : percentage > 25 ? 'bg-warning' : 'bg-danger'}" 
+                     role="progressbar" 
+                     style="width: ${percentage}%" 
+                     aria-valuenow="${percentage}" 
+                     aria-valuemin="0" 
+                     aria-valuemax="100">
+                </div>
+            </div>
+            <div class="alert alert-${remainingDays > 5 ? 'success' : remainingDays > 0 ? 'warning' : 'danger'} small mb-0">
+                <i class="fas ${remainingDays > 5 ? 'fa-check-circle' : remainingDays > 0 ? 'fa-exclamation-triangle' : 'fa-times-circle'}"></i>
+                ${remainingDays > 5 ? 'You have sufficient leave balance.' : 
+                  remainingDays > 0 ? 'Your leave balance is getting low.' : 
+                  'You have no remaining leave days for this type.'}
+            </div>
+        `;
+        
+        // Show/hide emergency contact based on leave type
+        if (['3', '4', '5'].includes(leaveTypeId)) { // Maternity, Paternity, Bereavement
+            emergencyContactCard.style.display = 'block';
+        } else {
+            emergencyContactCard.style.display = 'none';
+        }
+    });
+    
+    // Toggle emergency contact fields
+    sameAsProfileCheckbox.addEventListener('change', function() {
+        if (this.checked) {
+            // In a real app, you would fetch this from the user's profile
+            emergencyContactInput.value = '{{ user.get_full_name|default:user.username }}';
+            emergencyPhoneInput.value = '{{ user.profile.phone|default:"" }}';
+            
+            emergencyContactInput.disabled = true;
+            emergencyPhoneInput.disabled = true;
+        } else {
+            emergencyContactInput.disabled = false;
+            emergencyPhoneInput.disabled = false;
+        }
+    });
+    
+    // Initialize emergency contact fields
+    if (sameAsProfileCheckbox.checked) {
+        sameAsProfileCheckbox.dispatchEvent(new Event('change'));
+    }
+    
+    // Save as draft functionality
+    saveDraftBtn.addEventListener('click', function() {
+        saveDraftModal.show();
+    });
+    
+    draftConfirmation.addEventListener('change', function() {
+        confirmSaveDraft.disabled = !this.checked;
+    });
+    
+    confirmSaveDraft.addEventListener('click', function() {
+        // In a real app, you would submit the form with a draft status
+        alert('Draft saved successfully!');
+        saveDraftModal.hide();
+        window.location.href = '{% url 'leave:dashboard' %}';
+    });
+    
+    // Form submission
+    document.getElementById('leaveRequestForm').addEventListener('submit', function(e) {
+        const totalDays = parseFloat(totalDaysInput.value) || 0;
+        
+        if (totalDays <= 0) {
+            e.preventDefault();
+            alert('Please select valid leave dates.');
+            return false;
+        }
+        
+        // Additional validation can be added here
+        
+        // Show loading state
+        const submitBtn = this.querySelector('button[type="submit"]');
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Submitting...';
+    });
+    
+    // Initialize tooltips
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+});
+</script>
+{% endblock %}

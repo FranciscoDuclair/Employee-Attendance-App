@@ -1,0 +1,274 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{% block leave_title %}{% endblock %} - Leave Management{% endblock %}
+
+{% block extra_css %}
+{{ block.super }}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<style>
+    .leave-card {
+        transition: transform 0.2s, box-shadow 0.2s;
+        border-left: 4px solid #4e73df;
+    }
+    .leave-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    }
+    .leave-status {
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+        padding: 0.25rem 0.75rem;
+        border-radius: 50rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+    .status-pending {
+        background-color: #f6c23e;
+        color: #fff;
+    }
+    .status-approved {
+        background-color: #1cc88a;
+        color: #fff;
+    }
+    .status-rejected {
+        background-color: #e74a3b;
+        color: #fff;
+    }
+    .status-cancelled {
+        background-color: #6c757d;
+        color: #fff;
+    }
+    .calendar-day {
+        min-height: 100px;
+        border: 1px solid #e3e6f0;
+        padding: 0.5rem;
+        position: relative;
+    }
+    .calendar-day.today {
+        background-color: #f8f9fc;
+        border: 2px solid #4e73df;
+    }
+    .calendar-day.other-month {
+        background-color: #f8f9fc;
+        opacity: 0.6;
+    }
+    .leave-badge {
+        font-size: 0.7rem;
+        margin-bottom: 2px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: block;
+        padding: 0.15rem 0.35rem;
+        border-radius: 0.25rem;
+        color: white;
+        cursor: pointer;
+    }
+    .leave-badge:hover {
+        opacity: 0.9;
+    }
+    .leave-type-1 { background-color: #4e73df; }
+    .leave-type-2 { background-color: #1cc88a; }
+    .leave-type-3 { background-color: #36b9cc; }
+    .leave-type-4 { background-color: #f6c23e; }
+    .leave-type-5 { background-color: #e74a3b; }
+    .leave-type-6 { background-color: #6f42c1; }
+    .leave-type-7 { background-color: #fd7e14; }
+    .leave-type-8 { background-color: #20c9a6; }
+    .leave-type-9 { background-color: #5a5c69; }
+    .leave-type-10 { background-color: #e83e8c; }
+    
+    .quick-action-card {
+        transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        cursor: pointer;
+        border: 1px solid #e3e6f0;
+    }
+    .quick-action-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        border-color: #5a5c69;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">{% block page_heading %}Leave Management{% endblock %}</h1>
+        <div class="d-flex">
+            {% block page_actions %}{% endblock %}
+            <a href="{% url 'leave:request_create' %}" class="btn btn-primary btn-icon-split ml-2">
+                <span class="icon text-white-50">
+                    <i class="fas fa-plus"></i>
+                </span>
+                <span class="text">New Request</span>
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Sidebar -->
+        <div class="col-lg-3 mb-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Leave Menu</h6>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+                        <a href="{% url 'leave:dashboard' %}" class="list-group-item list-group-item-action {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+                            <i class="fas fa-tachometer-alt fa-fw me-2"></i>Dashboard
+                        </a>
+                        <a href="{% url 'leave:calendar' %}" class="list-group-item list-group-item-action {% if request.resolver_match.url_name == 'calendar' %}active{% endif %}">
+                            <i class="far fa-calendar-alt fa-fw me-2"></i>Calendar View
+                        </a>
+                        <a href="{% url 'leave:request_list' %}" class="list-group-item list-group-item-action {% if request.resolver_match.url_name == 'request_list' %}active{% endif %}">
+                            <i class="fas fa-list fa-fw me-2"></i>My Requests
+                        </a>
+                        {% if user.is_manager or user.is_staff %}
+                        <a href="{% url 'leave:team_requests' %}" class="list-group-item list-group-item-action {% if request.resolver_match.url_name == 'team_requests' %}active{% endif %}">
+                            <i class="fas fa-users fa-fw me-2"></i>Team Requests
+                        </a>
+                        {% endif %}
+                        {% if user.is_staff %}
+                        <a href="{% url 'admin:leave_leavetype_changelist' %}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-cog fa-fw me-2"></i>Manage Leave Types
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Leave Balance Card -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">My Leave Balance</h6>
+                </div>
+                <div class="card-body p-0">
+                    <ul class="list-group list-group-flush">
+                        {% for balance in leave_balances|slice:":5" %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            {{ balance.leave_type.name }}
+                            <span class="badge bg-primary rounded-pill">
+                                {{ balance.remaining_days }} / {{ balance.total_allocated }}
+                            </span>
+                        </li>
+                        {% empty %}
+                        <li class="list-group-item text-muted">No leave balances found</li>
+                        {% endfor %}
+                        {% if leave_balances|length > 5 %}
+                        <li class="list-group-item text-center">
+                            <a href="#" class="text-primary">View All</a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- Quick Stats Card -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Quick Stats</h6>
+                </div>
+                <div class="card-body">
+                    <div class="text-center">
+                        <div class="mb-3">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Pending Requests
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                {{ pending_requests.count }}
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Approved This Year
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                {{ leave_stats.total_days|default:0 }} days
+                            </div>
+                        </div>
+                        <div>
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                Upcoming Leave
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                {% if upcoming_leaves %}
+                                    {{ upcoming_leaves.0.start_date|date:"M d" }}
+                                {% else %}
+                                    None
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="col-lg-9">
+            {% block leave_content %}
+            <!-- Content will be overridden by child templates -->
+            {% endblock %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{{ block.super }}
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script>
+// Initialize date pickers
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize all date pickers
+    var datepickers = document.querySelectorAll('.datepicker');
+    datepickers.forEach(function(picker) {
+        flatpickr(picker, {
+            dateFormat: 'Y-m-d',
+            allowInput: true,
+            minDate: 'today',
+            disable: [
+                function(date) {
+                    // Disable weekends
+                    return (date.getDay() === 0 || date.getDay() === 6);
+                }
+            ]
+        });
+    });
+    
+    // Initialize date range pickers
+    var rangePickers = document.querySelectorAll('.date-range-picker');
+    rangePickers.forEach(function(picker) {
+        flatpickr(picker, {
+            mode: 'range',
+            dateFormat: 'Y-m-d',
+            allowInput: true,
+            minDate: 'today',
+            disable: [
+                function(date) {
+                    // Disable weekends
+                    return (date.getDay() === 0 || date.getDay() === 6);
+                }
+            ]
+        });
+    });
+    
+    // Update end date when start date changes to ensure it's after start date
+    var startDateInput = document.getElementById('id_start_date');
+    var endDateInput = document.getElementById('id_end_date');
+    
+    if (startDateInput && endDateInput) {
+        startDateInput.addEventListener('change', function() {
+            if (endDateInput.value && new Date(endDateInput.value) < new Date(this.value)) {
+                endDateInput._flatpickr.setDate(this.value);
+            }
+            endDateInput._flatpickr.set('minDate', this.value);
+        });
+    }
+});
+</script>
+{% endblock %}

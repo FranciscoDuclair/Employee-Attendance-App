@@ -1,0 +1,212 @@
+{% extends 'base.html' %}
+
+{% block title %}Settings - Employee Attendance System{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="mb-4">
+            <i class="fas fa-cog me-2"></i>Settings
+        </h1>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <!-- Face Recognition Settings -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-user-circle me-2"></i>Face Recognition Settings
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if settings %}
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Status:</strong> 
+                                <span class="badge {% if settings.face_recognition_enabled %}bg-success{% else %}bg-secondary{% endif %}">
+                                    {% if settings.face_recognition_enabled %}Enabled{% else %}Disabled{% endif %}
+                                </span>
+                            </p>
+                            <p><strong>Confidence Threshold:</strong> {{ settings.face_confidence_threshold|floatformat:1 }}%</p>
+                            <p><strong>Location Tracking:</strong> 
+                                <span class="badge {% if settings.location_tracking_enabled %}bg-success{% else %}bg-secondary{% endif %}">
+                                    {% if settings.location_tracking_enabled %}Enabled{% else %}Disabled{% endif %}
+                                </span>
+                            </p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Late Threshold:</strong> {{ settings.late_threshold_minutes }} minutes</p>
+                            <p><strong>Manual Attendance:</strong> 
+                                <span class="badge {% if settings.allow_manual_attendance %}bg-success{% else %}bg-secondary{% endif %}">
+                                    {% if settings.allow_manual_attendance %}Allowed{% else %}Not Allowed{% endif %}
+                                </span>
+                            </p>
+                            <p><strong>Photo Required:</strong> 
+                                <span class="badge {% if settings.require_photo_for_attendance %}bg-warning{% else %}bg-secondary{% endif %}">
+                                    {% if settings.require_photo_for_attendance %}Yes{% else %}No{% endif %}
+                                </span>
+                            </p>
+                        </div>
+                    </div>
+                {% else %}
+                    <p class="text-muted">No settings configured.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Profile Settings -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-user me-2"></i>Profile Information
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>Name:</strong> {{ user.get_full_name|default:user.username }}</p>
+                        <p><strong>Email:</strong> {{ user.email }}</p>
+                        <p><strong>Employee ID:</strong> {{ user.employee_id }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Department:</strong> {{ user.department|default:"Not specified" }}</p>
+                        <p><strong>Position:</strong> {{ user.position|default:"Not specified" }}</p>
+                        <p><strong>Role:</strong> {{ user.get_role_display }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Security Settings -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-shield-alt me-2"></i>Security
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <button class="btn btn-outline-primary" onclick="changePassword()">
+                        <i class="fas fa-key me-2"></i>Change Password
+                    </button>
+                    <a href="{% url 'attendance_web:face_setup' %}" class="btn btn-outline-info">
+                        <i class="fas fa-user-circle me-2"></i>Manage Face Recognition
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <!-- Quick Stats -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-chart-pie me-2"></i>Quick Stats
+                </h5>
+            </div>
+            <div class="card-body">
+                <p><strong>Face Recognition:</strong> 
+                    <span class="badge {% if user.face_encoding %}bg-success{% else %}bg-warning{% endif %}">
+                        {% if user.face_encoding %}Setup{% else %}Not Setup{% endif %}
+                    </span>
+                </p>
+                <p><strong>Account Status:</strong> 
+                    <span class="badge {% if user.is_active %}bg-success{% else %}bg-danger{% endif %}">
+                        {% if user.is_active %}Active{% else %}Inactive{% endif %}
+                    </span>
+                </p>
+                <p><strong>Member Since:</strong> {{ user.date_joined|date:"M Y" }}</p>
+            </div>
+        </div>
+
+        <!-- System Info -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-info-circle me-2"></i>System Information
+                </h5>
+            </div>
+            <div class="card-body">
+                <p><strong>Version:</strong> 1.0.0</p>
+                <p><strong>Last Updated:</strong> {{ user.updated_at|date:"M d, Y" }}</p>
+                <div class="mt-3">
+                    <a href="/api/docs/" class="btn btn-sm btn-outline-primary" target="_blank">
+                        <i class="fas fa-book me-1"></i>API Docs
+                    </a>
+                    <a href="/admin/" class="btn btn-sm btn-outline-secondary" target="_blank">
+                        <i class="fas fa-cogs me-1"></i>Admin
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Change Password Modal -->
+<div class="modal fade" id="passwordModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-key me-2"></i>Change Password
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="passwordForm">
+                    <div class="mb-3">
+                        <label for="currentPassword" class="form-label">Current Password</label>
+                        <input type="password" class="form-control" id="currentPassword" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="newPassword" class="form-label">New Password</label>
+                        <input type="password" class="form-control" id="newPassword" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="confirmPassword" class="form-label">Confirm New Password</label>
+                        <input type="password" class="form-control" id="confirmPassword" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="submitPasswordChange()">
+                    Update Password
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function changePassword() {
+    const modal = new bootstrap.Modal(document.getElementById('passwordModal'));
+    modal.show();
+}
+
+function submitPasswordChange() {
+    const currentPassword = document.getElementById('currentPassword').value;
+    const newPassword = document.getElementById('newPassword').value;
+    const confirmPassword = document.getElementById('confirmPassword').value;
+    
+    if (newPassword !== confirmPassword) {
+        alert('New passwords do not match.');
+        return;
+    }
+    
+    if (newPassword.length < 8) {
+        alert('Password must be at least 8 characters long.');
+        return;
+    }
+    
+    // This would typically make an API call to change the password
+    alert('Password change functionality would be implemented here.');
+    bootstrap.Modal.getInstance(document.getElementById('passwordModal')).hide();
+}
+</script>
+{% endblock %}

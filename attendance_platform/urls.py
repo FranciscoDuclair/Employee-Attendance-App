@@ -23,20 +23,32 @@ from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, Spec
 urlpatterns = [
     path('admin/', admin.site.urls),
     
+    # Web Interface
+    path('', include('attendance.web_urls')),
+    
     # API Documentation
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
     path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
     path('api/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
     
-    # API URLs
+    # API endpoints
     path('api/auth/', include('users.urls')),
     path('api/attendance/', include('attendance.urls')),
     path('api/payroll/', include('payroll.urls')),
     path('api/leave/', include('leave.urls')),
     path('api/shifts/', include('shifts.urls')),
     path('api/notifications/', include('notifications.urls')),
+    path('api/reports/', include('reports.urls')),
+    
+    # Web namespaces for template URL resolution
+    path('web/leave/', include('leave.urls', namespace='leave')),
+    path('web/payroll/', include('payroll.urls', namespace='payroll')),
+    path('web/shifts/', include('shifts.urls', namespace='shifts')),
+    path('web/notifications/', include('notifications.urls', namespace='notifications')),
+    path('web/reports/', include('reports.urls', namespace='reports')),
 ]
 
-# Serve media files in development
+# Serve media files during development
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

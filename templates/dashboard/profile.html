@@ -1,0 +1,163 @@
+{% extends 'dashboard/base_dashboard.html' %}
+{% load static %}
+
+{% block title %}My Profile - {{ block.super }}{% endblock %}
+
+{% block dashboard_content %}
+<div class="card mb-4">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0"><i class="fas fa-user-edit me-2"></i>My Profile</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-4 text-center">
+                <div class="mb-3">
+                    {% if user.profile_picture %}
+                        <img src="{{ user.profile_picture.url }}" class="rounded-circle img-thumbnail" width="200" height="200" alt="Profile Picture">
+                    {% else %}
+                        <div class="bg-light rounded-circle d-flex align-items-center justify-content-center mx-auto" style="width: 200px; height: 200px;">
+                            <i class="fas fa-user text-muted" style="font-size: 5rem;"></i>
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="d-grid gap-2">
+                    <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#changePhotoModal">
+                        <i class="fas fa-camera me-2"></i>Change Photo
+                    </button>
+                    {% if user.profile_picture %}
+                        <form method="post" action="{% url 'attendance_web:remove_profile_picture' %}" class="d-inline">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-outline-danger w-100">
+                                <i class="fas fa-trash-alt me-2"></i>Remove Photo
+                            </button>
+                        </form>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="col-md-8">
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="id_first_name" class="form-label">First Name</label>
+                            <input type="text" class="form-control" id="id_first_name" name="first_name" 
+                                   value="{{ form.first_name.value|default:'' }}" required>
+                            {% if form.first_name.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.first_name.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <label for="id_last_name" class="form-label">Last Name</label>
+                            <input type="text" class="form-control" id="id_last_name" name="last_name" 
+                                   value="{{ form.last_name.value|default:'' }}" required>
+                            {% if form.last_name.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.last_name.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="id_email" class="form-label">Email Address</label>
+                        <input type="email" class="form-control" id="id_email" name="email" 
+                               value="{{ form.email.value|default:'' }}" required>
+                        {% if form.email.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.email.errors.0 }}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="id_phone" class="form-label">Phone Number</label>
+                        <input type="tel" class="form-control" id="id_phone" name="phone" 
+                               value="{{ form.phone.value|default:'' }}">
+                        {% if form.phone.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.phone.errors.0 }}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="id_department" class="form-label">Department</label>
+                        <input type="text" class="form-control" id="id_department" 
+                               value="{{ user.department|default:'Not specified' }}" disabled>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="id_position" class="form-label">Position</label>
+                        <input type="text" class="form-control" id="id_position" 
+                               value="{{ user.get_role_display }}" disabled>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between align-items-center">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-2"></i>Save Changes
+                        </button>
+                        <a href="{% url 'attendance_web:change_password' %}" class="text-primary">
+                            <i class="fas fa-key me-1"></i>Change Password
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Change Photo Modal -->
+<div class="modal fade" id="changePhotoModal" tabindex="-1" aria-labelledby="changePhotoModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="changePhotoModalLabel">Change Profile Photo</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" action="{% url 'attendance_web:upload_profile_picture' %}" enctype="multipart/form-data">
+                <div class="modal-body">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="profile_picture" class="form-label">Choose a new profile picture</label>
+                        <input class="form-control" type="file" id="profile_picture" name="profile_picture" accept="image/*" required>
+                        <div class="form-text">Recommended size: 400x400 pixels. Max file size: 2MB.</div>
+                    </div>
+                    <div class="text-center">
+                        <div id="imagePreview" class="d-none mt-3">
+                            <p class="mb-2">Preview:</p>
+                            <img id="preview" src="#" alt="Preview" class="img-thumbnail" style="max-width: 200px; max-height: 200px;">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Upload Photo</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Preview image before upload
+document.getElementById('profile_picture').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        
+        reader.onload = function(e) {
+            const preview = document.getElementById('preview');
+            preview.src = e.target.result;
+            document.getElementById('imagePreview').classList.remove('d-none');
+        }
+        
+        reader.readAsDataURL(file);
+    }
+});
+</script>
+{% endblock %}

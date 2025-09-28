@@ -1,0 +1,350 @@
+{% extends 'dashboard/base_dashboard.html' %}
+{% load static %}
+
+{% block title %}Team Attendance - {{ block.super }}{% endblock %}
+
+{% block dashboard_content %}
+<div class="card mb-4">
+    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+        <h5 class="mb-0"><i class="fas fa-users me-2"></i>Team Attendance</h5>
+        <div class="d-flex
+            <button type="button" class="btn btn-light btn-sm" data-bs-toggle="modal" data-bs-target="#exportModal">
+                <i class="fas fa-download me-1"></i> Export
+            </button>
+        </div>
+    </div>
+    
+    <div class="card-body">
+        <!-- Date Range Selector -->
+        <form method="get" class="row g-3 mb-4">
+            <div class="col-md-4">
+                <label for="start_date" class="form-label">Start Date</label>
+                <input type="date" class="form-control" id="start_date" name="start_date" 
+                       value="{{ start_date|date:'Y-m-d' }}">
+            </div>
+            <div class="col-md-4">
+                <label for="end_date" class="form-label">End Date</label>
+                <input type="date" class="form-control" id="end_date" name="end_date" 
+                       value="{{ end_date|date:'Y-m-d' }}">
+            </div>
+            <div class="col-md-4 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary me-2">
+                    <i class="fas fa-filter me-1"></i> Filter
+                </button>
+                <a href="?" class="btn btn-outline-secondary">Reset</a>
+            </div>
+        </form>
+        
+        <!-- Summary Cards -->
+        <div class="row mb-4">
+            <div class="col-md-3 mb-3">
+                <div class="card bg-success bg-opacity-10 border-0 h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="card-subtitle mb-2 text-muted">Present</h6>
+                                <h3 class="mb-0 text-success">{{ attendance_data|sum_attr:'present' }}</h3>
+                            </div>
+                            <div class="bg-success bg-opacity-25 p-3 rounded-circle">
+                                <i class="fas fa-check-circle text-success" style="font-size: 1.5rem;"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="card bg-warning bg-opacity-10 border-0 h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="card-subtitle mb-2 text-muted">Late Arrivals</h6>
+                                <h3 class="mb-0 text-warning">{{ attendance_data|sum_attr:'late' }}</h3>
+                            </div>
+                            <div class="bg-warning bg-opacity-25 p-3 rounded-circle">
+                                <i class="fas fa-clock text-warning" style="font-size: 1.5rem;"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="card bg-danger bg-opacity-10 border-0 h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="card-subtitle mb-2 text-muted">Absent</h6>
+                                <h3 class="mb-0 text-danger">{{ attendance_data|sum_attr:'absent' }}</h3>
+                            </div>
+                            <div class="bg-danger bg-opacity-25 p-3 rounded-circle">
+                                <i class="fas fa-times-circle text-danger" style="font-size: 1.5rem;"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="card bg-info bg-opacity-10 border-0 h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="card-subtitle mb-2 text-muted">Team Members</h6>
+                                <h3 class="mb-0 text-info">{{ team_members.count }}</h3>
+                            </div>
+                            <div class="bg-info bg-opacity-25 p-3 rounded-circle">
+                                <i class="fas fa-users text-info" style="font-size: 1.5rem;"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Team Attendance Table -->
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>Employee</th>
+                        <th class="text-center">Present</th>
+                        <th class="text-center">Late</th>
+                        <th class="text-center">Absent</th>
+                        <th class="text-center">Attendance %</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for data in attendance_data %}
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <div class="flex-shrink-0">
+                                    {% if data.user.profile_picture %}
+                                        <img src="{{ data.user.profile_picture.url }}" alt="" class="rounded-circle" width="40" height="40">
+                                    {% else %}
+                                        <div class="bg-light rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                            <i class="fas fa-user text-muted"></i>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <h6 class="mb-0">{{ data.user.get_full_name }}</h6>
+                                    <small class="text-muted">{{ data.user.position|default:"Employee" }}</small>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="text-center">
+                            <span class="badge bg-success">{{ data.present }}</span>
+                        </td>
+                        <td class="text-center">
+                            <span class="badge bg-warning">{{ data.late }}</span>
+                        </td>
+                        <td class="text-center">
+                            <span class="badge bg-danger">{{ data.absent }}</span>
+                        </td>
+                        <td>
+                            <div class="progress" style="height: 8px;">
+                                {% with total=data.present|add:data.late|add:data.absent %}
+                                {% if total > 0 %}
+                                    {% widthratio data.present|add:data.late total 100 as attendance_percent %}
+                                    <div class="progress-bar bg-success" role="progressbar" 
+                                         style="width: {{ attendance_percent }}%" 
+                                         aria-valuenow="{{ attendance_percent }}" 
+                                         aria-valuemin="0" 
+                                         aria-valuemax="100"></div>
+                                {% else %}
+                                    <div class="progress-bar bg-secondary" role="progressbar" 
+                                         style="width: 0%" 
+                                         aria-valuenow="0" 
+                                         aria-valuemin="0" 
+                                         aria-valuemax="100"></div>
+                                {% endif %}
+                                {% endwith %}
+                            </div>
+                            <small class="text-muted">
+                                {% with total=data.present|add:data.late|add:data.absent %}
+                                    {% if total > 0 %}
+                                        {{ data.present|add:data.late }} of {{ total }} days ({{ attendance_percent }}%)
+                                    {% else %}
+                                        No data available
+                                    {% endif %}
+                                {% endwith %}
+                            </small>
+                        </td>
+                        <td class="text-end">
+                            <a href="{% url 'attendance_web:employee_attendance' data.user.id %}" 
+                               class="btn btn-sm btn-outline-primary" 
+                               data-bs-toggle="tooltip" 
+                               title="View Details">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                            <button class="btn btn-sm btn-outline-secondary" 
+                                    data-bs-toggle="modal" 
+                                    data-bs-target="#sendReminderModal" 
+                                    data-user-id="{{ data.user.id }}"
+                                    data-user-name="{{ data.user.get_full_name }}"
+                                    title="Send Reminder">
+                                <i class="fas fa-bell"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center py-4">
+                            <div class="text-muted">
+                                <i class="fas fa-inbox fa-3x mb-3"></i>
+                                <p class="mb-0">No team members found or no attendance data available for the selected period.</p>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Export Modal -->
+<div class="modal fade" id="exportModal" tabindex="-1" aria-labelledby="exportModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exportModalLabel">Export Attendance Data</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="get" action="{% url 'attendance_web:export_attendance' %}">
+                <div class="modal-body">
+                    <input type="hidden" name="start_date" value="{{ start_date|date:'Y-m-d' }}">
+                    <input type="hidden" name="end_date" value="{{ end_date|date:'Y-m-d' }}">
+                    
+                    <div class="mb-3">
+                        <label for="export_format" class="form-label">Export Format</label>
+                        <select class="form-select" id="export_format" name="format">
+                            <option value="csv">CSV (Comma Separated Values)</option>
+                            <option value="excel">Excel (.xlsx)</option>
+                            <option value="pdf">PDF Document</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Include</label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" value="1" id="include_present" name="include_present" checked>
+                            <label class="form-check-label" for="include_present">Present Days</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" value="1" id="include_late" name="include_late" checked>
+                            <label class="form-check-label" for="include_late">Late Arrivals</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" value="1" id="include_absent" name="include_absent" checked>
+                            <label class="form-check-label" for="include_absent">Absent Days</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-download me-1"></i> Export Data
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Send Reminder Modal -->
+<div class="modal fade" id="sendReminderModal" tabindex="-1" aria-labelledby="sendReminderModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="sendReminderModalLabel">Send Reminder</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" action="{% url 'attendance_web:send_reminder' %}">
+                <div class="modal-body">
+                    {% csrf_token %}
+                    <input type="hidden" name="user_id" id="reminder_user_id" value="">
+                    
+                    <div class="mb-3">
+                        <label for="reminder_message" class="form-label">Message to <span id="employeeName">Employee</span></label>
+                        <textarea class="form-control" id="reminder_message" name="message" rows="4" required>Dear [Employee],
+
+This is a friendly reminder to submit your attendance for the following dates: {{ start_date|date:'M d, Y' }} to {{ end_date|date:'M d, Y' }}.
+
+Thank you,
+{{ request.user.get_full_name }}</textarea>
+                        <div class="form-text">You can customize the message above.</div>
+                    </div>
+                    
+                    <div class="form-check form-switch mb-3">
+                        <input class="form-check-input" type="checkbox" id="send_email" name="send_email" checked>
+                        <label class="form-check-label" for="send_email">Send as email notification</label>
+                    </div>
+                    
+                    <div class="form-check form-switch mb-3">
+                        <input class="form-check-input" type="checkbox" id="send_sms" name="send_sms">
+                        <label class="form-check-label" for="send_sms">Send as SMS (if available)</label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-paper-plane me-1"></i> Send Reminder
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Initialize tooltips
+var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+    return new bootstrap.Tooltip(tooltipTriggerEl)
+});
+
+// Handle send reminder modal
+var sendReminderModal = document.getElementById('sendReminderModal')
+sendReminderModal.addEventListener('show.bs.modal', function (event) {
+    var button = event.relatedTarget;
+    var userId = button.getAttribute('data-user-id');
+    var userName = button.getAttribute('data-user-name');
+    
+    // Update the modal's content
+    var modalTitle = sendReminderModal.querySelector('.modal-title');
+    var employeeName = sendReminderModal.querySelector('#employeeName');
+    var userIdInput = sendReminderModal.querySelector('#reminder_user_id');
+    
+    modalTitle.textContent = 'Send Reminder to ' + userName;
+    employeeName.textContent = userName;
+    userIdInput.value = userId;
+    
+    // Update the message with the employee's name
+    var messageTextarea = sendReminderModal.querySelector('#reminder_message');
+    messageTextarea.value = messageTextarea.value.replace('[Employee]', userName);
+});
+
+// Handle date range validation
+const startDateInput = document.getElementById('start_date');
+const endDateInput = document.getElementById('end_date');
+
+function validateDateRange() {
+    if (startDateInput.value && endDateInput.value) {
+        const startDate = new Date(startDateInput.value);
+        const endDate = new Date(endDateInput.value);
+        
+        if (startDate > endDate) {
+            endDateInput.setCustomValidity('End date must be after start date');
+        } else {
+            endDateInput.setCustomValidity('');
+        }
+    }
+}
+
+startDateInput.addEventListener('change', validateDateRange);
+endDateInput.addEventListener('change', validateDateRange);
+</script>
+{% endblock %}

@@ -1,0 +1,260 @@
+{% extends 'base.html' %}
+{% load humanize %}
+{% load currency_tags %}
+
+{% block title %}My Payroll - Employee Attendance System{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">My Payroll</h1>
+        <div class="d-flex">
+            <a href="{% url 'attendance_web:dashboard' %}" class="btn btn-primary btn-sm mr-2">
+                <i class="fas fa-arrow-left fa-sm text-white-50"></i> Back to Dashboard
+            </a>
+            {% if current_payroll %}
+            <a href="{% url 'payroll:payslip_download' %}?payroll_id={{ current_payroll.id }}" class="btn btn-success btn-sm">
+                <i class="fas fa-download fa-sm text-white-50"></i> Download Latest Payslip
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Filter Form -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Filter Payroll Records</h6>
+        </div>
+        <div class="card-body">
+            <form method="GET" class="row">
+                <div class="col-md-4">
+                    <label for="month">Month:</label>
+                    <select name="month" id="month" class="form-control">
+                        <option value="">All Months</option>
+                        <option value="1" {% if month_filter == '1' %}selected{% endif %}>January</option>
+                        <option value="2" {% if month_filter == '2' %}selected{% endif %}>February</option>
+                        <option value="3" {% if month_filter == '3' %}selected{% endif %}>March</option>
+                        <option value="4" {% if month_filter == '4' %}selected{% endif %}>April</option>
+                        <option value="5" {% if month_filter == '5' %}selected{% endif %}>May</option>
+                        <option value="6" {% if month_filter == '6' %}selected{% endif %}>June</option>
+                        <option value="7" {% if month_filter == '7' %}selected{% endif %}>July</option>
+                        <option value="8" {% if month_filter == '8' %}selected{% endif %}>August</option>
+                        <option value="9" {% if month_filter == '9' %}selected{% endif %}>September</option>
+                        <option value="10" {% if month_filter == '10' %}selected{% endif %}>October</option>
+                        <option value="11" {% if month_filter == '11' %}selected{% endif %}>November</option>
+                        <option value="12" {% if month_filter == '12' %}selected{% endif %}>December</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label for="year">Year:</label>
+                    <select name="year" id="year" class="form-control">
+                        <option value="">All Years</option>
+                        {% for year in "2020,2021,2022,2023,2024,2025"|split:"," %}
+                        <option value="{{ year }}" {% if year_filter == year %}selected{% endif %}>{{ year }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary mr-2">Filter</button>
+                    <a href="{% url 'payroll:my_payroll_web' %}" class="btn btn-secondary">Clear</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Current Month Payroll Summary -->
+    {% if current_payroll %}
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Current Month Gross Pay</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ current_payroll.gross_pay|currency }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-coins fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Current Month Net Pay</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ current_payroll.net_pay|currency }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-money-bill-wave fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Hours Worked</div>
+                            <div class="row no-gutters align-items-center">
+                                <div class="col-auto">
+                                    <div class="h5 mb-0 mr-3 font-weight-bold text-gray-800">{{ current_payroll.total_hours_worked|floatformat:1 }}</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-clock fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Status</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                <span class="badge badge-{% if current_payroll.status == 'approved' %}success{% elif current_payroll.status == 'pending' %}warning{% else %}danger{% endif %}">
+                                    {{ current_payroll.get_status_display }}
+                                </span>
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-clipboard-list fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Payroll Records Table -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Payroll History</h6>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered" width="100%" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th>Month/Year</th>
+                            <th>Basic Salary</th>
+                            <th>Regular Pay</th>
+                            <th>Overtime Pay</th>
+                            <th>Gross Pay</th>
+                            <th>Deductions</th>
+                            <th>Net Pay</th>
+                            <th>Hours</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for payroll in payroll_records %}
+                        <tr>
+                            <td>{{ payroll.month }}/{{ payroll.year }}</td>
+                            <td>{{ payroll.basic_salary|currency }}</td>
+                            <td>{{ payroll.regular_pay|currency }}</td>
+                            <td>{{ payroll.overtime_pay|currency }}</td>
+                            <td><strong>{{ payroll.gross_pay|currency }}</strong></td>
+                            <td>{{ payroll.tax_deduction|add:payroll.other_deductions|currency }}</td>
+                            <td><strong class="text-success">{{ payroll.net_pay|currency }}</strong></td>
+                            <td>{{ payroll.total_hours_worked|floatformat:1 }}h</td>
+                            <td>
+                                <span class="badge badge-{% if payroll.status == 'approved' %}success{% elif payroll.status == 'pending' %}warning{% else %}danger{% endif %}">
+                                    {{ payroll.get_status_display }}
+                                </span>
+                            </td>
+                            <td>
+                                <a href="{% url 'payroll:payslip_download' %}?payroll_id={{ payroll.id }}" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-download"></i> Download
+                                </a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="10" class="text-center text-muted">No payroll records found.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Payroll Breakdown (if current payroll exists) -->
+    {% if current_payroll %}
+    <div class="row">
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Earnings Breakdown</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-2">
+                        <div class="col-8">Basic Salary:</div>
+                        <div class="col-4 text-right">{{ current_payroll.basic_salary|currency }}</div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-8">Regular Pay ({{ current_payroll.regular_hours|floatformat:1 }}h):</div>
+                        <div class="col-4 text-right">{{ current_payroll.regular_pay|currency }}</div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-8">Overtime Pay ({{ current_payroll.overtime_hours|floatformat:1 }}h):</div>
+                        <div class="col-4 text-right">{{ current_payroll.overtime_pay|currency }}</div>
+                    </div>
+                    <hr>
+                    <div class="row">
+                        <div class="col-8"><strong>Gross Pay:</strong></div>
+                        <div class="col-4 text-right"><strong>{{ current_payroll.gross_pay|currency }}</strong></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Deductions Breakdown</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-2">
+                        <div class="col-8">Tax Deduction:</div>
+                        <div class="col-4 text-right">{{ current_payroll.tax_deduction|currency }}</div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-8">Other Deductions:</div>
+                        <div class="col-4 text-right">{{ current_payroll.other_deductions|currency }}</div>
+                    </div>
+                    <hr>
+                    <div class="row mb-2">
+                        <div class="col-8"><strong>Total Deductions:</strong></div>
+                        <div class="col-4 text-right"><strong>{{ current_payroll.tax_deduction|add:current_payroll.other_deductions|currency }}</strong></div>
+                    </div>
+                    <hr>
+                    <div class="row">
+                        <div class="col-8"><strong class="text-success">Net Pay:</strong></div>
+                        <div class="col-4 text-right"><strong class="text-success">{{ current_payroll.net_pay|currency }}</strong></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

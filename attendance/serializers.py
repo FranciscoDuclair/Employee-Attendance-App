@@ -1,167 +1,82 @@
 from rest_framework import serializers
-from django.utils import timezone
-from .models import Attendance
+from .models import Attendance, AttendanceSettings
+from users.serializers import UserSerializer
 
 
 class AttendanceSerializer(serializers.ModelSerializer):
     """Serializer for attendance records"""
-    user_name = serializers.CharField(source='user.get_full_name', read_only=True)
-    employee_id = serializers.CharField(source='user.employee_id', read_only=True)
+    user = UserSerializer(read_only=True)
     hours_worked = serializers.ReadOnlyField()
     is_late = serializers.ReadOnlyField()
+    is_face_verified = serializers.ReadOnlyField()
+    location_string = serializers.ReadOnlyField()
     
     class Meta:
         model = Attendance
         fields = [
-            'id', 'user', 'user_name', 'employee_id', 'date', 'check_in_time',
-            'check_out_time', 'attendance_type', 'status', 'face_verified',
-            'face_confidence', 'is_manual', 'manual_approved_by', 'manual_reason',
-            'latitude', 'longitude', 'notes', 'hours_worked', 'is_late',
-            'created_at', 'updated_at'
+            'id', 'user', 'date', 'check_in_time', 'check_out_time',
+            'attendance_type', 'status', 'face_verified', 'face_confidence',
+            'face_image', 'latitude', 'longitude', 'location_accuracy',
+            'notes', 'ip_address', 'device_info', 'hours_worked', 'is_late',
+            'is_face_verified', 'location_string', 'created_at', 'updated_at'
         ]
-        read_only_fields = ['id', 'created_at', 'updated_at', 'user_name', 'employee_id']
 
 
-class CheckInSerializer(serializers.Serializer):
-    """Serializer for check-in attendance"""
-    latitude = serializers.DecimalField(max_digits=9, decimal_places=6, required=False, allow_null=True)
-    longitude = serializers.DecimalField(max_digits=9, decimal_places=6, required=False, allow_null=True)
-    notes = serializers.CharField(required=False, allow_blank=True)
+class AttendanceCreateSerializer(serializers.ModelSerializer):
+    """Serializer for creating attendance records"""
     
-    def validate(self, attrs):
-        user = self.context['request'].user
-        today = timezone.now().date()
-        
-        # Check if user already checked in today
-        existing_checkin = Attendance.objects.filter(
-            user=user,
-            date=today,
-            attendance_type='check_in'
-        ).first()
-        
-        if existing_checkin:
-            raise serializers.ValidationError("You have already checked in today.")
-        
-        return attrs
-
-
-class CheckOutSerializer(serializers.Serializer):
-    """Serializer for check-out attendance"""
-    latitude = serializers.DecimalField(max_digits=9, decimal_places=6, required=False, allow_null=True)
-    longitude = serializers.DecimalField(max_digits=9, decimal_places=6, required=False, allow_null=True)
-    notes = serializers.CharField(required=False, allow_blank=True)
+    class Meta:
+        model = Attendance
+        fields = [
+            'user', 'date', 'check_in_time', 'check_out_time',
+            'attendance_type', 'status', 'face_verified', 'face_confidence',
+            'face_image', 'latitude', 'longitude', 'location_accuracy',
+            'notes', 'ip_address', 'device_info'
+        ]
     
-    def validate(self, attrs):
-        user = self.context['request'].user
-        today = timezone.now().date()
+    def validate(self, data):
+        """Custom validation for attendance records"""
+        user = data.get('user')
+        date = data.get('date')
+        attendance_type = data.get('attendance_type')
         
-        # Check if user has checked in today
-        checkin_record = Attendance.objects.filter(
+        # Check for duplicate records
+        if Attendance.objects.filter(
             user=user,
-            date=today,
-            attendance_type='check_in'
-        ).first()
-        
-        if not checkin_record:
-            raise serializers.ValidationError("You must check in before checking out.")
-        
-        # Check if user already checked out today
-        existing_checkout = Attendance.objects.filter(
-            user=user,
-            date=today,
-            attendance_type='check_out'
-        ).first()
-        
-        if existing_checkout:
-            raise serializers.ValidationError("You have already checked out today.")
-        
-        return attrs
-
-
-class FaceRecognitionSerializer(serializers.Serializer):
-    """Serializer for face recognition check-in/out"""
-    image = serializers.ImageField()
-    attendance_type = serializers.ChoiceField(choices=['check_in', 'check_out'])
-    latitude = serializers.DecimalField(max_digits=9, decimal_places=6, required=False, allow_null=True)
-    longitude = serializers.DecimalField(max_digits=9, decimal_places=6, required=False, allow_null=True)
-    notes = serializers.CharField(required=False, allow_blank=True)
-    
-    def validate(self, attrs):
-        user = self.context['request'].user
-        today = timezone.now().date()
-        attendance_type = attrs['attendance_type']
-        
-        # Check existing attendance for the day
-        existing_attendance = Attendance.objects.filter(
-            user=user,
-            date=today,
+            date=date,
             attendance_type=attendance_type
-        ).first()
+        ).exists():
+            raise serializers.ValidationError(
+                f"Attendance record for {attendance_type} already exists for this date."
+            )
         
-        if existing_attendance:
-            raise serializers.ValidationError(f"You have already {attendance_type.replace('_', ' ')} today.")
-        
-        # For check-out, ensure check-in exists
-        if attendance_type == 'check_out':
-            checkin_record = Attendance.objects.filter(
-                user=user,
-                date=today,
-                attendance_type='check_in'
-            ).first()
-            
-            if not checkin_record:
-                raise serializers.ValidationError("You must check in before checking out.")
-        
-        return attrs
+        return data
 
 
-class ManualAttendanceSerializer(serializers.ModelSerializer):
-    """Serializer for manual attendance entry (HR/Admin only)"""
-    user_name = serializers.CharField(source='user.get_full_name', read_only=True)
-    employee_id = serializers.CharField(source='user.employee_id', read_only=True)
-    approved_by_name = serializers.CharField(source='manual_approved_by.get_full_name', read_only=True)
-    
-    class Meta:
-        model = Attendance
-        fields = [
-            'id', 'user', 'user_name', 'employee_id', 'date', 'check_in_time',
-            'check_out_time', 'attendance_type', 'status', 'is_manual',
-            'manual_approved_by', 'approved_by_name', 'manual_reason',
-            'latitude', 'longitude', 'notes', 'created_at', 'updated_at'
-        ]
-        read_only_fields = [
-            'id', 'is_manual', 'manual_approved_by', 'approved_by_name',
-            'created_at', 'updated_at', 'user_name', 'employee_id'
-        ]
-    
-    def create(self, validated_data):
-        validated_data['is_manual'] = True
-        validated_data['manual_approved_by'] = self.context['request'].user
-        return super().create(validated_data)
-
-
-class AttendanceHistorySerializer(serializers.ModelSerializer):
-    """Serializer for attendance history"""
+class AttendanceListSerializer(serializers.ModelSerializer):
+    """Simplified serializer for attendance lists"""
     user_name = serializers.CharField(source='user.get_full_name', read_only=True)
     employee_id = serializers.CharField(source='user.employee_id', read_only=True)
     hours_worked = serializers.ReadOnlyField()
-    is_late = serializers.ReadOnlyField()
     
     class Meta:
         model = Attendance
         fields = [
             'id', 'user_name', 'employee_id', 'date', 'check_in_time',
-            'check_out_time', 'attendance_type', 'status', 'face_verified',
-            'is_manual', 'hours_worked', 'is_late', 'notes'
+            'check_out_time', 'status', 'hours_worked', 'attendance_type',
+            'face_verified', 'face_confidence'
         ]
 
 
-class AttendanceStatsSerializer(serializers.Serializer):
-    """Serializer for attendance statistics"""
-    total_days = serializers.IntegerField()
-    present_days = serializers.IntegerField()
-    late_days = serializers.IntegerField()
-    absent_days = serializers.IntegerField()
-    total_hours = serializers.DecimalField(max_digits=8, decimal_places=2)
-    average_hours_per_day = serializers.DecimalField(max_digits=6, decimal_places=2)
-    punctuality_rate = serializers.DecimalField(max_digits=5, decimal_places=2)
+class AttendanceSettingsSerializer(serializers.ModelSerializer):
+    """Serializer for attendance settings"""
+    
+    class Meta:
+        model = AttendanceSettings
+        fields = [
+            'face_recognition_enabled', 'face_confidence_threshold',
+            'location_tracking_enabled', 'location_radius_meters',
+            'office_latitude', 'office_longitude', 'late_threshold_minutes',
+            'early_departure_threshold_minutes', 'require_photo_for_attendance',
+            'allow_manual_attendance', 'created_at', 'updated_at'
+        ]

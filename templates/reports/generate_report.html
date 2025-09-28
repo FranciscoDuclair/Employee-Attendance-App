@@ -1,0 +1,277 @@
+{% extends 'dashboard/base_dashboard.html' %}
+{% load humanize %}
+
+{% block title %}Generate Report - {{ block.super }}{% endblock %}
+
+{% block dashboard_content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <h1 class="h3 mb-0 text-gray-800">Generate Team Report</h1>
+            <a href="{% url 'attendance_web:dashboard' %}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-1"></i>Back to Dashboard
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Report Configuration</h6>
+            </div>
+            <div class="card-body">
+                <form method="post" id="reportForm">
+                    {% csrf_token %}
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="report_type" class="form-label">Report Type <span class="text-danger">*</span></label>
+                            <select class="form-select" id="report_type" name="report_type" required>
+                                <option value="attendance">Attendance Report</option>
+                                <option value="leave">Leave Report</option>
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="format_type" class="form-label">Format <span class="text-danger">*</span></label>
+                            <select class="form-select" id="format_type" name="format_type" required>
+                                <option value="csv">CSV (Excel Compatible)</option>
+                                <option value="pdf" disabled>PDF (Coming Soon)</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="date_from" class="form-label">From Date <span class="text-danger">*</span></label>
+                            <input type="date" class="form-control" id="date_from" name="date_from" required>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="date_to" class="form-label">To Date <span class="text-danger">*</span></label>
+                            <input type="date" class="form-control" id="date_to" name="date_to" required>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="employee" class="form-label">Employee Filter (Optional)</label>
+                        <select class="form-select" id="employee" name="employee">
+                            <option value="">All Team Members</option>
+                            {% for member in team_members %}
+                            <option value="{{ member.id }}">
+                                {{ member.get_full_name|default:member.username }} - {{ member.employee_id|default:"No ID" }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="d-flex justify-content-end">
+                        <button type="button" class="btn btn-secondary me-2" onclick="resetForm()">Reset</button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-download me-1"></i>Generate & Download Report
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <!-- Report Info -->
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Report Information</h6>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <h6 class="text-gray-800">Available Reports</h6>
+                    <ul class="list-unstyled small text-muted">
+                        <li><i class="fas fa-clock text-primary me-1"></i> Attendance Report - Daily attendance records</li>
+                        <li><i class="fas fa-calendar-alt text-success me-1"></i> Leave Report - Leave requests and balances</li>
+                    </ul>
+                </div>
+                
+                <div class="mb-3">
+                    <h6 class="text-gray-800">Team Overview</h6>
+                    <p class="text-muted small mb-0">{{ team_members.count }} team member{{ team_members.count|pluralize }} under your management</p>
+                </div>
+                
+                <div class="alert alert-info" role="alert">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <strong>Note:</strong> Reports will include data for your direct team members only.
+                </div>
+            </div>
+        </div>
+        
+        <!-- Quick Actions -->
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Quick Actions</h6>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <button type="button" class="btn btn-outline-primary btn-sm" onclick="setCurrentMonth()">
+                        <i class="fas fa-calendar-month me-1"></i>Current Month
+                    </button>
+                    <button type="button" class="btn btn-outline-primary btn-sm" onclick="setLastMonth()">
+                        <i class="fas fa-calendar-minus me-1"></i>Last Month
+                    </button>
+                    <button type="button" class="btn btn-outline-primary btn-sm" onclick="setCurrentWeek()">
+                        <i class="fas fa-calendar-week me-1"></i>Current Week
+                    </button>
+                    <button type="button" class="btn btn-outline-primary btn-sm" onclick="setLastWeek()">
+                        <i class="fas fa-calendar me-1"></i>Last Week
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Team Members -->
+        {% if team_members %}
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Your Team</h6>
+            </div>
+            <div class="card-body">
+                <div class="list-group list-group-flush">
+                    {% for member in team_members|slice:":5" %}
+                    <div class="list-group-item px-0 py-2 border-0">
+                        <div class="d-flex align-items-center">
+                            <div class="me-3">
+                                <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                                    <span class="text-white small font-weight-bold">{{ member.first_name|first }}{{ member.last_name|first }}</span>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="font-weight-bold small">{{ member.get_full_name|default:member.username }}</div>
+                                <div class="text-muted small">{{ member.employee_id|default:"No ID" }}</div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                    {% if team_members.count > 5 %}
+                    <div class="text-center text-muted small">
+                        ... and {{ team_members.count|add:"-5" }} more
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{{ block.super }}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Set default dates (current month)
+    setCurrentMonth();
+    
+    // Form validation
+    const form = document.getElementById('reportForm');
+    form.addEventListener('submit', function(e) {
+        const dateFrom = document.getElementById('date_from').value;
+        const dateTo = document.getElementById('date_to').value;
+        
+        if (!dateFrom || !dateTo) {
+            e.preventDefault();
+            alert('Please select both from and to dates.');
+            return false;
+        }
+        
+        if (new Date(dateFrom) > new Date(dateTo)) {
+            e.preventDefault();
+            alert('From date cannot be later than to date.');
+            return false;
+        }
+        
+        // Show loading state
+        const submitBtn = form.querySelector('button[type="submit"]');
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Generating...';
+        submitBtn.disabled = true;
+    });
+});
+
+function setCurrentMonth() {
+    const now = new Date();
+    const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+    const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    
+    document.getElementById('date_from').value = firstDay.toISOString().split('T')[0];
+    document.getElementById('date_to').value = lastDay.toISOString().split('T')[0];
+}
+
+function setLastMonth() {
+    const now = new Date();
+    const firstDay = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const lastDay = new Date(now.getFullYear(), now.getMonth(), 0);
+    
+    document.getElementById('date_from').value = firstDay.toISOString().split('T')[0];
+    document.getElementById('date_to').value = lastDay.toISOString().split('T')[0];
+}
+
+function setCurrentWeek() {
+    const now = new Date();
+    const firstDay = new Date(now.setDate(now.getDate() - now.getDay()));
+    const lastDay = new Date(now.setDate(now.getDate() - now.getDay() + 6));
+    
+    document.getElementById('date_from').value = firstDay.toISOString().split('T')[0];
+    document.getElementById('date_to').value = lastDay.toISOString().split('T')[0];
+}
+
+function setLastWeek() {
+    const now = new Date();
+    const firstDay = new Date(now.setDate(now.getDate() - now.getDay() - 7));
+    const lastDay = new Date(now.setDate(now.getDate() - now.getDay() - 1));
+    
+    document.getElementById('date_from').value = firstDay.toISOString().split('T')[0];
+    document.getElementById('date_to').value = lastDay.toISOString().split('T')[0];
+}
+
+function resetForm() {
+    document.getElementById('reportForm').reset();
+    setCurrentMonth();
+}
+</script>
+{% endblock %}
+
+{% block extra_css %}
+{{ block.super }}
+<style>
+    .form-label {
+        font-weight: 600;
+        color: #5a5c69;
+    }
+    
+    .form-control:focus,
+    .form-select:focus {
+        border-color: #4e73df;
+        box-shadow: 0 0 0 0.2rem rgba(78, 115, 223, 0.25);
+    }
+    
+    .card {
+        border: none;
+        border-radius: 0.35rem;
+    }
+    
+    .alert-info {
+        background-color: #d1ecf1;
+        border-color: #bee5eb;
+        color: #0c5460;
+    }
+    
+    .list-group-item {
+        background-color: transparent;
+    }
+    
+    .btn-outline-primary:hover {
+        color: #fff;
+        background-color: #4e73df;
+        border-color: #4e73df;
+    }
+</style>
+{% endblock %}

@@ -1,0 +1,174 @@
+{% extends 'leave/base_leave.html' %}
+{% load widget_tweaks %}
+
+{% block leave_title %}Edit Leave Request{% endblock %}
+{% block page_heading %}Edit Leave Request{% endblock %}
+
+{% block page_actions %}
+<a href="{% url 'leave:leave_dashboard' %}" class="btn btn-secondary btn-icon-split">
+    <span class="icon text-white-50">
+        <i class="fas fa-arrow-left"></i>
+    </span>
+    <span class="text">Back to Dashboard</span>
+</a>
+{% endblock %}
+
+{% block leave_content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-edit me-2"></i>Edit Leave Request
+                </h6>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.leave_type.id_for_label }}" class="form-label">
+                                <i class="fas fa-tag me-1"></i>Leave Type *
+                            </label>
+                            {{ form.leave_type|add_class:"form-select" }}
+                            {% if form.leave_type.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.leave_type.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">
+                                <i class="fas fa-info-circle me-1"></i>Current Status
+                            </label>
+                            <div class="form-control-plaintext">
+                                <span class="badge bg-warning">{{ object.get_status_display }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.start_date.id_for_label }}" class="form-label">
+                                <i class="fas fa-calendar-alt me-1"></i>Start Date *
+                            </label>
+                            {{ form.start_date|add_class:"form-control" }}
+                            {% if form.start_date.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.start_date.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.end_date.id_for_label }}" class="form-label">
+                                <i class="fas fa-calendar-alt me-1"></i>End Date *
+                            </label>
+                            {{ form.end_date|add_class:"form-control" }}
+                            {% if form.end_date.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.end_date.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="{{ form.reason.id_for_label }}" class="form-label">
+                            <i class="fas fa-comment me-1"></i>Reason *
+                        </label>
+                        {{ form.reason|add_class:"form-control" }}
+                        {% if form.reason.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.reason.errors.0 }}
+                            </div>
+                        {% endif %}
+                        <div class="form-text">
+                            Please provide a detailed reason for your leave request.
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Note:</strong> You can only edit pending leave requests. Once approved or rejected, requests cannot be modified.
+                    </div>
+                    
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'leave:leave_dashboard' %}" class="btn btn-secondary">
+                            <i class="fas fa-times me-1"></i>Cancel
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-1"></i>Update Request
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Request Details Card -->
+        <div class="card shadow mt-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-info-circle me-2"></i>Request Details
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>Request ID:</strong> #{{ object.id }}</p>
+                        <p><strong>Submitted:</strong> {{ object.created_at|date:"M d, Y g:i A" }}</p>
+                        <p><strong>Last Modified:</strong> {{ object.updated_at|date:"M d, Y g:i A" }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Total Days:</strong> {{ object.total_days }} day{{ object.total_days|pluralize }}</p>
+                        {% if object.approved_by %}
+                            <p><strong>Reviewed By:</strong> {{ object.approved_by.get_full_name|default:object.approved_by.username }}</p>
+                        {% endif %}
+                        {% if object.approved_at %}
+                            <p><strong>Reviewed At:</strong> {{ object.approved_at|date:"M d, Y g:i A" }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                {% if object.admin_notes %}
+                    <div class="mt-3">
+                        <strong>Admin Notes:</strong>
+                        <div class="alert alert-light mt-2">
+                            {{ object.admin_notes }}
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Set minimum date to today for start and end dates
+    const today = new Date().toISOString().split('T')[0];
+    const startDateInput = document.getElementById('{{ form.start_date.id_for_label }}');
+    const endDateInput = document.getElementById('{{ form.end_date.id_for_label }}');
+    
+    if (startDateInput) {
+        startDateInput.setAttribute('min', today);
+        startDateInput.addEventListener('change', function() {
+            if (endDateInput) {
+                endDateInput.setAttribute('min', this.value);
+                if (endDateInput.value && endDateInput.value < this.value) {
+                    endDateInput.value = this.value;
+                }
+            }
+        });
+    }
+    
+    if (endDateInput) {
+        endDateInput.setAttribute('min', today);
+    }
+});
+</script>
+{% endblock %}

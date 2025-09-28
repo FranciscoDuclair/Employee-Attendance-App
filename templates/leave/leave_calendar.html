@@ -1,0 +1,1161 @@
+{% extends 'leave/base_leave.html' %}
+{% load static %}
+
+{% block leave_title %}Leave Calendar{% endblock %}
+{% block page_heading %}Leave Calendar{% endblock %}
+
+{% block page_actions %}
+<div class="d-flex">
+    <div class="btn-group me-2">
+        <a href="?view=month" class="btn btn-outline-secondary {% if view_mode == 'month' %}active{% endif %}">
+            <i class="far fa-calendar-alt me-1"></i> Month
+        </a>
+        <a href="?view=week" class="btn btn-outline-secondary {% if view_mode == 'week' %}active{% endif %}">
+            <i class="far fa-calendar-week me-1"></i> Week
+        </a>
+        <a href="?view=day" class="btn btn-outline-secondary {% if view_mode == 'day' %}active{% endif %}">
+            <i class="far fa-calendar-day me-1"></i> Day
+        </a>
+        <a href="?view=list" class="btn btn-outline-secondary {% if view_mode == 'list' %}active{% endif %}">
+            <i class="fas fa-list-ul me-1"></i> List
+        </a>
+    </div>
+    
+    <div class="btn-group me-2">
+        <a href="?{{ base_url }}&month={{ prev_month|date:'Y-m' }}" class="btn btn-outline-secondary" title="Previous">
+            <i class="fas fa-chevron-left"></i>
+        </a>
+        <button type="button" class="btn btn-outline-secondary" id="currentPeriod">
+            {% if view_mode == 'month' %}
+                {{ current_date|date:"F Y" }}
+            {% elif view_mode == 'week' %}
+                Week {{ current_date|date:"W" }}, {{ current_date|date:"Y" }}
+            {% else %}
+                {{ current_date|date:"F j, Y" }}
+            {% endif %}
+        </button>
+        <a href="?{{ base_url }}&month={{ next_month|date:'Y-m' }}" class="btn btn-outline-secondary" title="Next">
+            <i class="fas fa-chevron-right"></i>
+        </a>
+        <a href="?{{ base_url }}" class="btn btn-outline-secondary" title="Today">
+            <i class="fas fa-calendar-day"></i>
+        </a>
+    </div>
+    
+    <div class="dropdown me-2">
+        <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="teamFilter" data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="fas fa-users me-1"></i>
+            {% if team_filter %}{{ team_filter.name }}{% else %}All Teams{% endif %}
+        </button>
+        <ul class="dropdown-menu" aria-labelledby="teamFilter">
+            <li><a class="dropdown-item {% if not team_filter %}active{% endif %}" href="?{{ base_url }}">All Teams</a></li>
+            <li><hr class="dropdown-divider"></li>
+            {% for team in teams %}
+            <li><a class="dropdown-item {% if team_filter.id == team.id %}active{% endif %}" 
+                  href="?{{ base_url }}&team={{ team.id }}">{{ team.name }}</a></li>
+            {% endfor %}
+        </ul>
+    </div>
+    
+    <div class="dropdown me-2">
+        <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="leaveTypeFilter" data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="fas fa-filter me-1"></i>
+            {% if leave_type_filter %}{{ leave_type_filter.name }}{% else %}All Leave Types{% endif %}
+        </button>
+        <ul class="dropdown-menu" aria-labelledby="leaveTypeFilter">
+            <li><a class="dropdown-item {% if not leave_type_filter %}active{% endif %}" href="?{{ base_url }}">All Leave Types</a></li>
+            <li><hr class="dropdown-divider"></li>
+            {% for type in leave_types %}
+            <li><a class="dropdown-item {% if leave_type_filter.id == type.id %}active{% endif %}" 
+                  href="?{{ base_url }}&leave_type={{ type.id }}">
+                <span class="badge me-2" style="background-color: {{ type.color }}">&nbsp;&nbsp;</span>
+                {{ type.name }}
+            </a></li>
+            {% endfor %}
+        </ul>
+    </div>
+    
+    <div class="ms-auto">
+        <div class="btn-group">
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addEventModal">
+                <i class="fas fa-plus me-1"></i> Add Event
+            </button>
+            <button type="button" class="btn btn-primary dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false">
+                <span class="visually-hidden">Toggle Dropdown</span>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end">
+                <li><a class="dropdown-item" href="{% url 'leave:request_create' %}">
+                    <i class="fas fa-plus-circle me-2"></i>New Leave Request
+                </a></li>
+                <li><a class="dropdown-item" href="#">
+                    <i class="fas fa-calendar-plus me-2"></i>Add Public Holiday
+                </a></li>
+                <li><a class="dropdown-item" href="#">
+                    <i class="fas fa-user-plus me-2"></i>Add Team Event
+                </a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item" href="#">
+                    <i class="fas fa-cog me-2"></i>Calendar Settings
+                </a></li>
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block leave_content %}
+<div class="row">
+    <div class="col-12">
+        <!-- Calendar View -->
+        {% if view_mode == 'month' %}
+            {% include 'leave/partials/calendar_month.html' %}
+        {% elif view_mode == 'week' %}
+            {% include 'leave/partials/calendar_week.html' %}
+        {% elif view_mode == 'day' %}
+            {% include 'leave/partials/calendar_day.html' %}
+        {% else %}
+            {% include 'leave/partials/calendar_list.html' %}
+        {% endif %}
+    </div>
+</div>
+
+<!-- Legend -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                <h6 class="m-0 font-weight-bold text-primary">Legend</h6>
+                <button class="btn btn-sm btn-link text-primary" type="button" data-bs-toggle="collapse" data-bs-target="#legendCollapse" aria-expanded="true" aria-controls="legendCollapse">
+                    <i class="fas fa-fw fa-chevron-down"></i>
+                </button>
+            </div>
+            <div class="collapse show" id="legendCollapse">
+                <div class="card-body py-2">
+                    <div class="d-flex flex-wrap gap-3">
+                        {% for type in leave_types %}
+                        <div class="d-flex align-items-center me-3">
+                            <span class="legend-color" style="background-color: {{ type.color }}; width: 16px; height: 16px; border-radius: 3px; display: inline-block; margin-right: 5px;"></span>
+                            <span class="small">{{ type.name }}</span>
+                        </div>
+                        {% endfor %}
+                        <div class="d-flex align-items-center me-3">
+                            <span class="legend-color" style="background-color: #6c757d; width: 16px; height: 16px; border-radius: 3px; display: inline-block; margin-right: 5px;"></span>
+                            <span class="small">Public Holiday</span>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <span class="legend-color" style="background-color: #4e73df; width: 16px; height: 16px; border-radius: 3px; display: inline-block; margin-right: 5px;"></span>
+                            <span class="small">Team Event</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Upcoming Time Off -->
+<div class="row">
+    <div class="col-md-6">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                <h6 class="m-0 font-weight-bold text-primary">Upcoming Time Off</h6>
+                <a href="{% url 'leave:team_requests' %}" class="btn btn-sm btn-link">View All</a>
+            </div>
+            <div class="card-body p-0">
+                {% if upcoming_leaves %}
+                    <div class="list-group list-group-flush">
+                        {% for leave in upcoming_leaves|slice:":5" %}
+                        <a href="{% url 'leave:detail' leave.id %}" class="list-group-item list-group-item-action">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div class="d-flex align-items-center">
+                                    <img src="{{ leave.user.profile.image.url|default:'/static/img/undraw_profile.svg' }}" 
+                                         class="rounded-circle me-3" width="40" height="40" 
+                                         alt="{{ leave.user.get_full_name }}">
+                                    <div>
+                                        <h6 class="mb-0">{{ leave.user.get_full_name|default:leave.user.username }}</h6>
+                                        <div class="small text-muted">{{ leave.leave_type.name }}</div>
+                                    </div>
+                                </div>
+                                <div class="text-end">
+                                    <div class="small">{{ leave.start_date|date:"M j" }} - {{ leave.end_date|date:"M j, Y" }}</div>
+                                    <span class="badge bg-{{ leave.status_badge_class }}">
+                                        {{ leave.get_status_display }}
+                                    </span>
+                                </div>
+                            </div>
+                        </a>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-calendar-check fa-3x text-gray-300 mb-3"></i>
+                        <p class="text-muted mb-0">No upcoming time off scheduled</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                <h6 class="m-0 font-weight-bold text-primary">Team Availability</h6>
+                <div class="dropdown no-arrow">
+                    <a class="dropdown-toggle" href="#" role="button" id="availabilityDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end shadow animated--fade-in" aria-labelledby="availabilityDropdown">
+                        <li><a class="dropdown-item" href="#"><i class="fas fa-sync-alt fa-sm fa-fw me-2 text-gray-400"></i> Refresh</a></li>
+                        <li><a class="dropdown-item" href="#"><i class="fas fa-file-export fa-sm fa-fw me-2 text-gray-400"></i> Export</a></li>
+                        <div class="dropdown-divider"></div>
+                        <li><a class="dropdown-item" href="#"><i class="fas fa-cog fa-sm fa-fw me-2 text-gray-400"></i> Settings</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <h6 class="small font-weight-bold text-uppercase text-muted mb-2">Team Members Out This Week</h6>
+                    {% if current_week_leaves %}
+                        <div class="list-group list-group-flush">
+                            {% for leave in current_week_leaves %}
+                            <div class="list-group-item px-0 py-2">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div class="d-flex align-items-center">
+                                        <img src="{{ leave.user.profile.image.url|default:'/static/img/undraw_profile.svg' }}" 
+                                             class="rounded-circle me-3" width="32" height="32" 
+                                             alt="{{ leave.user.get_full_name }}">
+                                        <div>
+                                            <div class="font-weight-bold">{{ leave.user.get_short_name|default:leave.user.username }}</div>
+                                            <div class="small text-muted">{{ leave.leave_type.name }}</div>
+                                        </div>
+                                    </div>
+                                    <div class="text-end">
+                                        <div class="small">{{ leave.start_date|date:"M j" }}{% if not leave.is_single_day %} - {{ leave.end_date|date:"j" }}{% endif %}</div>
+                                        <span class="badge bg-{{ leave.status_badge_class }} small">
+                                            {{ leave.get_status_display }}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="alert alert-success small mb-0">
+                            <i class="fas fa-check-circle me-1"></i> All team members are available this week.
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div class="mt-4 pt-3 border-top">
+                    <h6 class="small font-weight-bold text-uppercase text-muted mb-2">Team Capacity</h6>
+                    <div class="mb-2 d-flex justify-content-between">
+                        <span class="small">This Week</span>
+                        <span class="small font-weight-bold">{{ team_capacity.this_week.available }}/{{ team_capacity.this_week.total }} available</span>
+                    </div>
+                    <div class="progress mb-4" style="height: 10px;">
+                        <div class="progress-bar bg-{{ team_capacity.this_week.percentage|capacity_color }}" 
+                             role="progressbar" 
+                             style="width: {{ team_capacity.this_week.percentage }}%" 
+                             aria-valuenow="{{ team_capacity.this_week.percentage }}" 
+                             aria-valuemin="0" 
+                             aria-valuemax="100">
+                        </div>
+                    </div>
+                    
+                    <div class="mb-2 d-flex justify-content-between">
+                        <span class="small">Next Week</span>
+                        <span class="small font-weight-bold">{{ team_capacity.next_week.available }}/{{ team_capacity.next_week.total }} available</span>
+                    </div>
+                    <div class="progress" style="height: 10px;">
+                        <div class="progress-bar bg-{{ team_capacity.next_week.percentage|capacity_color }}" 
+                             role="progressbar" 
+                             style="width: {{ team_capacity.next_week.percentage }}%" 
+                             aria-valuenow="{{ team_capacity.next_week.percentage }}" 
+                             aria-valuemin="0" 
+                             aria-valuemax="100">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Event Modal -->
+<div class="modal fade" id="addEventModal" tabindex="-1" aria-labelledby="addEventModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addEventModalLabel">Add New Event</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="addEventForm">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="eventType" class="form-label">Event Type</label>
+                        <select class="form-select" id="eventType" required>
+                            <option value="" selected disabled>Select event type</option>
+                            <option value="leave">Leave Request</option>
+                            <option value="holiday">Public Holiday</option>
+                            <option value="event">Team Event</option>
+                        </select>
+                    </div>
+                    
+                    <div id="leaveRequestFields">
+                        <div class="mb-3">
+                            <label for="leaveType" class="form-label">Leave Type</label>
+                            <select class="form-select" id="leaveType" required>
+                                <option value="" selected disabled>Select leave type</option>
+                                {% for type in leave_types %}
+                                <option value="{{ type.id }}" data-color="{{ type.color }}">
+                                    {{ type.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="leaveEmployee" class="form-label">Employee</label>
+                            <select class="form-select" id="leaveEmployee" required>
+                                <option value="" selected disabled>Select employee</option>
+                                {% for member in team_members %}
+                                <option value="{{ member.id }}">{{ member.get_full_name|default:member.username }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div id="holidayFields" style="display: none;">
+                        <div class="mb-3">
+                            <label for="holidayName" class="form-label">Holiday Name</label>
+                            <input type="text" class="form-control" id="holidayName" placeholder="E.g., New Year's Day">
+                        </div>
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="recurringHoliday">
+                            <label class="form-check-label" for="recurringHoliday">
+                                Recurring holiday (every year)
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div id="eventFields" style="display: none;">
+                        <div class="mb-3">
+                            <label for="eventName" class="form-label">Event Name</label>
+                            <input type="text" class="form-control" id="eventName" placeholder="E.g., Team Building">
+                        </div>
+                        <div class="mb-3">
+                            <label for="eventTeam" class="form-label">Team</label>
+                            <select class="form-select" id="eventTeam">
+                                <option value="">All Teams</option>
+                                {% for team in teams %}
+                                <option value="{{ team.id }}">{{ team.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="startDate" class="form-label">Start Date</label>
+                                <input type="date" class="form-control" id="startDate" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="endDate" class="form-label">End Date</label>
+                                <input type="date" class="form-control" id="endDate" required>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-check form-switch mb-3">
+                        <input class="form-check-input" type="checkbox" id="allDayEvent" checked>
+                        <label class="form-check-label" for="allDayEvent">All day event</label>
+                    </div>
+                    
+                    <div id="timeFields" style="display: none;">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="startTime" class="form-label">Start Time</label>
+                                    <input type="time" class="form-control" id="startTime">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="endTime" class="form-label">End Time</label>
+                                    <input type="time" class="form-control" id="endTime">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="eventDescription" class="form-label">Description (Optional)</label>
+                        <textarea class="form-control" id="eventDescription" rows="3" placeholder="Add a description..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add Event</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Event Details Modal -->
+<div class="modal fade" id="eventDetailsModal" tabindex="-1" aria-labelledby="eventDetailsModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="eventDetailsModalLabel">Event Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="eventDetailsContent">
+                <!-- Dynamic content will be loaded here -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" id="editEventBtn">Edit</button>
+                <button type="button" class="btn btn-danger" id="deleteEventBtn">Delete</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+{{ block.super }}
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.10.1/main.min.css" rel="stylesheet">
+<style>
+    /* Calendar container */
+    #calendar {
+        background-color: #fff;
+        border-radius: 0.35rem;
+        box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+        padding: 1.25rem;
+    }
+    
+    /* Calendar header */
+    .fc-header-toolbar {
+        margin-bottom: 1.5rem !important;
+    }
+    
+    .fc-toolbar-title {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: #4e73df;
+    }
+    
+    .fc-button {
+        background-color: #f8f9fc !important;
+        border: 1px solid #d1d3e2 !important;
+        color: #6e707e !important;
+        padding: 0.375rem 0.75rem !important;
+        font-size: 0.85rem !important;
+        line-height: 1.5 !important;
+        border-radius: 0.35rem !important;
+        transition: all 0.2s ease-in-out !important;
+    }
+    
+    .fc-button:hover {
+        background-color: #e3e6f0 !important;
+        border-color: #bac8f3 !important;
+        color: #4e73df !important;
+    }
+    
+    .fc-button-active {
+        background-color: #4e73df !important;
+        border-color: #4e73df !important;
+        color: #fff !important;
+    }
+    
+    /* Calendar table */
+    .fc-theme-standard th {
+        background-color: #f8f9fc;
+        border-color: #e3e6f0;
+        color: #4e73df;
+        font-weight: 600;
+        padding: 0.5rem;
+        text-transform: uppercase;
+        font-size: 0.7rem;
+        letter-spacing: 0.5px;
+    }
+    
+    .fc-theme-standard td {
+        border-color: #e3e6f0;
+    }
+    
+    .fc-day-today {
+        background-color: rgba(78, 115, 223, 0.1) !important;
+    }
+    
+    .fc-daygrid-day-number {
+        color: #5a5c69;
+        font-weight: 600;
+        padding: 0.5rem;
+    }
+    
+    .fc-day-today .fc-daygrid-day-number {
+        color: #4e73df;
+        font-weight: 700;
+    }
+    
+    /* Event styles */
+    .fc-event {
+        border: none !important;
+        border-radius: 0.25rem !important;
+        padding: 0.25rem 0.5rem !important;
+        font-size: 0.75rem !important;
+        cursor: pointer !important;
+        margin-bottom: 2px !important;
+        transition: all 0.2s ease-in-out !important;
+    }
+    
+    .fc-event:hover {
+        opacity: 0.9 !important;
+        transform: translateX(2px);
+        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075) !important;
+    }
+    
+    .fc-event .fc-event-title {
+        font-weight: 500 !important;
+    }
+    
+    /* Custom event colors */
+    .fc-event-approval-required {
+        border-left: 3px solid #f6c23e !important;
+    }
+    
+    .fc-event-half-day {
+        border-left: 3px solid #36b9cc !important;
+    }
+    
+    .fc-event-public-holiday {
+        background-color: #f8f9fc !important;
+        color: #5a5c69 !important;
+        border-left: 3px solid #6c757d !important;
+    }
+    
+    .fc-event-team-event {
+        background-color: #e3f2fd !important;
+        color: #0d6efd !important;
+        border-left: 3px solid #0d6efd !important;
+    }
+    
+    /* Responsive adjustments */
+    @media (max-width: 767.98px) {
+        .fc-header-toolbar {
+            flex-direction: column;
+            align-items: flex-start !important;
+        }
+        
+        .fc-toolbar-chunk {
+            margin-bottom: 0.5rem;
+        }
+        
+        .fc-toolbar-title {
+            font-size: 1.25rem;
+        }
+        
+        .fc-button {
+            padding: 0.25rem 0.5rem !important;
+            font-size: 0.75rem !important;
+        }
+        
+        .fc-daygrid-day-number {
+            font-size: 0.8rem;
+            padding: 0.25rem;
+        }
+        
+        .fc-event {
+            font-size: 0.65rem !important;
+            padding: 0.15rem 0.3rem !important;
+        }
+    }
+    
+    /* Legend styles */
+    .legend-color {
+        width: 16px;
+        height: 16px;
+        border-radius: 3px;
+        display: inline-block;
+        margin-right: 5px;
+        vertical-align: middle;
+    }
+    
+    /* Custom scrollbar for modals */
+    .modal-body {
+        max-height: 70vh;
+        overflow-y: auto;
+    }
+    
+    /* Custom scrollbar for webkit browsers */
+    .modal-body::-webkit-scrollbar {
+        width: 6px;
+    }
+    
+    .modal-body::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 3px;
+    }
+    
+    .modal-body::-webkit-scrollbar-thumb {
+        background: #c1c1c1;
+        border-radius: 3px;
+    }
+    
+    .modal-body::-webkit-scrollbar-thumb:hover {
+        background: #a8a8a8;
+    }
+    
+    /* Animation for event hover */
+    @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.02); }
+        100% { transform: scale(1); }
+    }
+    
+    .fc-event:hover {
+        animation: pulse 0.5s ease-in-out;
+    }
+    
+    /* Custom badge styles */
+    .badge {
+        font-weight: 500;
+        padding: 0.35em 0.65em;
+    }
+    
+    /* Status badge colors */
+    .bg-pending { background-color: #f6c23e !important; }
+    .bg-approved { background-color: #1cc88a !important; }
+    .bg-rejected { background-color: #e74a3b !important; }
+    .bg-cancelled { background-color: #6c757d !important; }
+    
+    /* Team availability status */
+    .availability-status {
+        display: inline-block;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        margin-right: 5px;
+    }
+    
+    .status-available { background-color: #1cc88a; }
+    .status-partial { background-color: #f6c23e; }
+    .status-unavailable { background-color: #e74a3b; }
+    .status-unknown { background-color: #d1d3e2; }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+{{ block.super }}
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.10.1/main.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize FullCalendar
+    const calendarEl = document.getElementById('calendar');
+    
+    if (calendarEl) {
+        const calendar = new FullCalendar.Calendar(calendarEl, {
+            initialView: '{{ view_mode|default:"dayGridMonth" }}',
+            headerToolbar: {
+                left: 'prev,next today',
+                center: 'title',
+                right: 'dayGridMonth,timeGridWeek,timeGridDay,listWeek'
+            },
+            themeSystem: 'bootstrap5',
+            firstDay: 1, // Start week on Monday
+            weekends: true,
+            editable: false,
+            selectable: true,
+            selectMirror: true,
+            dayMaxEvents: 3, // Allow "more" link when too many events
+            events: [
+                // Sample events - in a real app, these would come from an API
+                {
+                    id: '1',
+                    title: 'Annual Leave - John Doe',
+                    start: '2023-06-01',
+                    end: '2023-06-05',
+                    color: '#4e73df',
+                    extendedProps: {
+                        type: 'leave',
+                        status: 'approved',
+                        leaveType: 'Annual Leave',
+                        employee: 'John Doe',
+                        description: 'Summer vacation',
+                        requiresApproval: false
+                    }
+                },
+                {
+                    id: '2',
+                    title: 'Sick Leave - Jane Smith',
+                    start: '2023-06-10',
+                    end: '2023-06-12',
+                    color: '#36b9cc',
+                    extendedProps: {
+                        type: 'leave',
+                        status: 'pending',
+                        leaveType: 'Sick Leave',
+                        employee: 'Jane Smith',
+                        description: 'Medical appointment',
+                        requiresApproval: true
+                    },
+                    className: 'fc-event-approval-required'
+                },
+                {
+                    id: '3',
+                    title: 'Public Holiday',
+                    start: '2023-06-15',
+                    allDay: true,
+                    color: '#6c757d',
+                    className: 'fc-event-public-holiday',
+                    extendedProps: {
+                        type: 'holiday',
+                        name: 'Eid al-Fitr',
+                        description: 'Public holiday celebrating the end of Ramadan',
+                        isRecurring: true
+                    }
+                },
+                {
+                    id: '4',
+                    title: 'Team Building',
+                    start: '2023-06-20T09:00:00',
+                    end: '2023-06-20T17:00:00',
+                    color: '#4e73df',
+                    className: 'fc-event-team-event',
+                    extendedProps: {
+                        type: 'event',
+                        team: 'All Teams',
+                        description: 'Quarterly team building activities',
+                        location: 'Conference Room A'
+                    }
+                },
+                {
+                    id: '5',
+                    title: 'Half Day - Alex Johnson',
+                    start: '2023-06-22T08:00:00',
+                    end: '2023-06-22T12:00:00',
+                    color: '#1cc88a',
+                    className: 'fc-event-half-day',
+                    extendedProps: {
+                        type: 'leave',
+                        status: 'approved',
+                        leaveType: 'Personal Leave',
+                        employee: 'Alex Johnson',
+                        description: 'Morning appointment',
+                        isHalfDay: true,
+                        halfDayPeriod: 'morning'
+                    }
+                }
+            ],
+            eventClick: function(info) {
+                const event = info.event;
+                const modal = new bootstrap.Modal(document.getElementById('eventDetailsModal'));
+                const modalContent = document.getElementById('eventDetailsContent');
+                
+                // Clear previous content
+                modalContent.innerHTML = '';
+                
+                // Set modal title based on event type
+                document.getElementById('eventDetailsModalLabel').textContent = event.title;
+                
+                // Create content based on event type
+                let content = `
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="badge bg-${event.extendedProps.type === 'leave' ? 'primary' : 'secondary'}">
+                                ${event.extendedProps.type === 'leave' ? 'Leave' : event.extendedProps.type === 'holiday' ? 'Public Holiday' : 'Team Event'}
+                            </span>
+                            ${event.extendedProps.status ? `
+                                <span class="badge bg-${event.extendedProps.status === 'approved' ? 'success' : 
+                                    event.extendedProps.status === 'pending' ? 'warning' : 
+                                    event.extendedProps.status === 'rejected' ? 'danger' : 'secondary'}">
+                                    ${event.extendedProps.status.charAt(0).toUpperCase() + event.extendedProps.status.slice(1)}
+                                </span>
+                            ` : ''}
+                        </div>
+                        
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="far fa-calendar-alt me-2 text-muted"></i>
+                            <span>${event.start ? event.start.toLocaleString('en-US', { 
+                                month: 'short', 
+                                day: 'numeric', 
+                                year: 'numeric',
+                                hour: event.allDay ? undefined : '2-digit',
+                                minute: event.allDay ? undefined : '2-digit',
+                                hour12: true
+                            }) : ''}${event.end ? ' - ' + event.end.toLocaleString('en-US', { 
+                                month: event.end.getMonth() === event.start.getMonth() ? undefined : 'short', 
+                                day: 'numeric', 
+                                year: event.end.getFullYear() === event.start.getFullYear() ? undefined : 'numeric',
+                                hour: event.allDay ? undefined : '2-digit',
+                                minute: event.allDay ? undefined : '2-digit',
+                                hour12: true
+                            }) : ''}</span>
+                        </div>
+                        
+                        ${event.extendedProps.leaveType ? `
+                            <div class="d-flex align-items-center mb-2">
+                                <i class="fas fa-umbrella-beach me-2 text-muted"></i>
+                                <span>${event.extendedProps.leaveType}</span>
+                            </div>
+                        ` : ''}
+                        
+                        ${event.extendedProps.employee ? `
+                            <div class="d-flex align-items-center mb-2">
+                                <i class="fas fa-user me-2 text-muted"></i>
+                                <span>${event.extendedProps.employee}</span>
+                            </div>
+                        ` : ''}
+                        
+                        ${event.extendedProps.team ? `
+                            <div class="d-flex align-items-center mb-2">
+                                <i class="fas fa-users me-2 text-muted"></i>
+                                <span>Team: ${event.extendedProps.team}</span>
+                            </div>
+                        ` : ''}
+                        
+                        ${event.extendedProps.location ? `
+                            <div class="d-flex align-items-center mb-2">
+                                <i class="fas fa-map-marker-alt me-2 text-muted"></i>
+                                <span>${event.extendedProps.location}</span>
+                            </div>
+                        ` : ''}
+                        
+                        ${event.extendedProps.description ? `
+                            <div class="mt-3">
+                                <h6 class="text-muted mb-2">Description</h6>
+                                <p class="mb-0">${event.extendedProps.description}</p>
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+                
+                modalContent.innerHTML = content;
+                
+                // Show/hide action buttons based on event type and permissions
+                const editBtn = document.getElementById('editEventBtn');
+                const deleteBtn = document.getElementById('deleteEventBtn');
+                
+                // In a real app, check user permissions here
+                const canEdit = true; // Example: check if user can edit
+                const canDelete = true; // Example: check if user can delete
+                
+                editBtn.style.display = canEdit ? 'inline-block' : 'none';
+                deleteBtn.style.display = canDelete ? 'inline-block' : 'none';
+                
+                // Set up event listeners for action buttons
+                editBtn.onclick = function() {
+                    // In a real app, handle edit action
+                    alert('Edit event: ' + event.title);
+                };
+                
+                deleteBtn.onclick = function() {
+                    if (confirm(`Are you sure you want to delete "${event.title}"?`)) {
+                        // In a real app, handle delete action
+                        event.remove();
+                        modal.hide();
+                        showToast('Event deleted successfully', 'success');
+                    }
+                };
+                
+                modal.show();
+                
+                // Don't let the browser navigate
+                info.jsEvent.preventDefault();
+            },
+            dateClick: function(info) {
+                // Handle date click (e.g., open add event modal with pre-filled date)
+                const addEventModal = new bootstrap.Modal(document.getElementById('addEventModal'));
+                const startDateInput = document.getElementById('startDate');
+                const endDateInput = document.getElementById('endDate');
+                
+                if (startDateInput && endDateInput) {
+                    const dateStr = info.dateStr;
+                    startDateInput.value = dateStr;
+                    endDateInput.value = dateStr;
+                    
+                    // In a real app, you might want to set the event type based on context
+                    // and show the appropriate fields
+                    // document.getElementById('eventType').value = 'leave';
+                    // toggleEventFields();
+                }
+                
+                addEventModal.show();
+            },
+            eventDidMount: function(info) {
+                // Add tooltips to events
+                if (info.event.extendedProps.description) {
+                    new bootstrap.Tooltip(info.el, {
+                        title: info.event.extendedProps.description,
+                        placement: 'top',
+                        trigger: 'hover',
+                        container: 'body'
+                    });
+                }
+            }
+        });
+        
+        calendar.render();
+        
+        // Handle window resize to ensure calendar updates properly
+        window.addEventListener('resize', function() {
+            calendar.updateSize();
+        });
+    }
+    
+    // Event type toggle in add event modal
+    const eventTypeSelect = document.getElementById('eventType');
+    const leaveRequestFields = document.getElementById('leaveRequestFields');
+    const holidayFields = document.getElementById('holidayFields');
+    const eventFields = document.getElementById('eventFields');
+    
+    if (eventTypeSelect) {
+        eventTypeSelect.addEventListener('change', function() {
+            const type = this.value;
+            
+            // Hide all fields first
+            leaveRequestFields.style.display = 'none';
+            holidayFields.style.display = 'none';
+            eventFields.style.display = 'none';
+            
+            // Show relevant fields based on selection
+            if (type === 'leave') {
+                leaveRequestFields.style.display = 'block';
+            } else if (type === 'holiday') {
+                holidayFields.style.display = 'block';
+            } else if (type === 'event') {
+                eventFields.style.display = 'block';
+            }
+        });
+    }
+    
+    // Toggle time fields based on all-day checkbox
+    const allDayCheckbox = document.getElementById('allDayEvent');
+    const timeFields = document.getElementById('timeFields');
+    
+    if (allDayCheckbox && timeFields) {
+        allDayCheckbox.addEventListener('change', function() {
+            timeFields.style.display = this.checked ? 'none' : 'block';
+        });
+    }
+    
+    // Handle form submission for adding new events
+    const addEventForm = document.getElementById('addEventForm');
+    if (addEventForm) {
+        addEventForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // In a real app, validate form data and send to server
+            const eventType = document.getElementById('eventType').value;
+            let eventData = {
+                title: '',
+                start: document.getElementById('startDate').value,
+                end: document.getElementById('endDate').value,
+                allDay: document.getElementById('allDayEvent').checked,
+                extendedProps: {
+                    type: eventType
+                }
+            };
+            
+            // Add event type specific data
+            if (eventType === 'leave') {
+                const leaveTypeSelect = document.getElementById('leaveType');
+                const leaveTypeText = leaveTypeSelect.options[leaveTypeSelect.selectedIndex].text;
+                const employeeSelect = document.getElementById('leaveEmployee');
+                const employeeText = employeeSelect.options[employeeSelect.selectedIndex].text;
+                
+                eventData.title = `${leaveTypeText} - ${employeeText}`;
+                eventData.color = leaveTypeSelect.options[leaveTypeSelect.selectedIndex].dataset.color;
+                eventData.extendedProps.leaveType = leaveTypeText;
+                eventData.extendedProps.employee = employeeText;
+                eventData.extendedProps.status = 'pending';
+                eventData.extendedProps.requiresApproval = true;
+                
+                // Add description if available
+                const description = document.getElementById('eventDescription').value;
+                if (description) {
+                    eventData.extendedProps.description = description;
+                }
+                
+                // Check if it's a half-day event
+                if (!eventData.allDay) {
+                    const startTime = document.getElementById('startTime').value;
+                    const endTime = document.getElementById('endTime').value;
+                    
+                    if (startTime && endTime) {
+                        eventData.start = `${eventData.start}T${startTime}`;
+                        eventData.end = `${eventData.end.split('T')[0]}T${endTime}`;
+                        eventData.extendedProps.isHalfDay = true;
+                        
+                        // Determine if it's morning or afternoon
+                        const startHour = parseInt(startTime.split(':')[0]);
+                        eventData.extendedProps.halfDayPeriod = startHour < 12 ? 'morning' : 'afternoon';
+                    }
+                }
+            } 
+            else if (eventType === 'holiday') {
+                const holidayName = document.getElementById('holidayName').value || 'Public Holiday';
+                const isRecurring = document.getElementById('recurringHoliday').checked;
+                
+                eventData.title = holidayName;
+                eventData.className = 'fc-event-public-holiday';
+                eventData.extendedProps.name = holidayName;
+                eventData.extendedProps.isRecurring = isRecurring;
+                
+                // Add description if available
+                const description = document.getElementById('eventDescription').value;
+                if (description) {
+                    eventData.extendedProps.description = description;
+                }
+            }
+            else if (eventType === 'event') {
+                const eventName = document.getElementById('eventName').value || 'Team Event';
+                const teamSelect = document.getElementById('eventTeam');
+                const teamName = teamSelect.options[teamSelect.selectedIndex].text || 'All Teams';
+                
+                eventData.title = eventName;
+                eventData.className = 'fc-event-team-event';
+                eventData.extendedProps.team = teamName;
+                
+                // Add time if not all-day
+                if (!eventData.allDay) {
+                    const startTime = document.getElementById('startTime').value;
+                    const endTime = document.getElementById('endTime').value;
+                    
+                    if (startTime && endTime) {
+                        eventData.start = `${eventData.start}T${startTime}`;
+                        eventData.end = `${eventData.end.split('T')[0]}T${endTime}`;
+                    }
+                }
+                
+                // Add description if available
+                const description = document.getElementById('eventDescription').value;
+                if (description) {
+                    eventData.extendedProps.description = description;
+                }
+            }
+            
+            // In a real app, you would send this to your server
+            console.log('New event data:', eventData);
+            
+            // Add the event to the calendar
+            if (calendar) {
+                calendar.addEvent(eventData);
+                
+                // Show success message
+                showToast('Event added successfully', 'success');
+                
+                // Close the modal
+                const modal = bootstrap.Modal.getInstance(document.getElementById('addEventModal'));
+                if (modal) {
+                    modal.hide();
+                }
+                
+                // Reset the form
+                this.reset();
+            }
+        });
+    }
+    
+    // Initialize tooltips
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+    
+    // Helper function to show toast notifications
+    function showToast(message, type = 'info') {
+        // In a real app, you would use a proper toast notification library
+        // This is a simplified example
+        const toastContainer = document.getElementById('toastContainer');
+        
+        if (!toastContainer) {
+            // Create toast container if it doesn't exist
+            const container = document.createElement('div');
+            container.id = 'toastContainer';
+            container.style.position = 'fixed';
+            container.style.top = '20px';
+            container.style.right = '20px';
+            container.style.zIndex = '1100';
+            document.body.appendChild(container);
+        }
+        
+        const toast = document.createElement('div');
+        toast.className = `toast align-items-center text-white bg-${type} border-0`;
+        toast.setAttribute('role', 'alert');
+        toast.setAttribute('aria-live', 'assertive');
+        toast.setAttribute('aria-atomic', 'true');
+        
+        toast.innerHTML = `
+            <div class="d-flex">
+                <div class="toast-body">
+                    ${message}
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+        `;
+        
+        document.getElementById('toastContainer').appendChild(toast);
+        
+        const bsToast = new bootstrap.Toast(toast, {
+            autohide: true,
+            delay: 3000
+        });
+        
+        bsToast.show();
+        
+        // Remove the toast after it's hidden
+        toast.addEventListener('hidden.bs.toast', function() {
+            toast.remove();
+        });
+    }
+    
+    // Set up date pickers to prevent selecting end date before start date
+    const startDateInput = document.getElementById('startDate');
+    const endDateInput = document.getElementById('endDate');
+    
+    if (startDateInput && endDateInput) {
+        startDateInput.addEventListener('change', function() {
+            endDateInput.min = this.value;
+            if (endDateInput.value && new Date(endDateInput.value) < new Date(this.value)) {
+                endDateInput.value = this.value;
+            }
+        });
+        
+        endDateInput.addEventListener('change', function() {
+            if (startDateInput.value && new Date(this.value) < new Date(startDateInput.value)) {
+                this.value = startDateInput.value;
+            }
+        });
+        
+        // Set initial min date to today
+        const today = new Date().toISOString().split('T')[0];
+        startDateInput.min = today;
+        endDateInput.min = today;
+    }
+    
+    // Set up time pickers to prevent selecting end time before start time
+    const startTimeInput = document.getElementById('startTime');
+    const endTimeInput = document.getElementById('endTime');
+    
+    if (startTimeInput && endTimeInput) {
+        startTimeInput.addEventListener('change', function() {
+            if (startDateInput.value === endDateInput.value && endTimeInput.value && this.value > endTimeInput.value) {
+                endTimeInput.value = this.value;
+            }
+        });
+        
+        endTimeInput.addEventListener('change', function() {
+            if (startDateInput.value === endDateInput.value && startTimeInput.value && this.value < startTimeInput.value) {
+                this.value = startTimeInput.value;
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

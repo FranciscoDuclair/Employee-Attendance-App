@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <!-- Mobile Menu Button -->
+        <div class="col-12 d-md-none mb-3">
+            <button class="btn btn-primary w-100" type="button" data-bs-toggle="collapse" data-bs-target="#dashboardSidebar" aria-expanded="false" aria-controls="dashboardSidebar">
+                <i class="fas fa-bars me-2"></i>Dashboard Menu
+            </button>
+        </div>
+        
+        <!-- Sidebar -->
+        <div class="col-md-3 mb-4">
+            <div class="collapse d-md-block" id="dashboardSidebar">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <i class="fas fa-user-circle me-2"></i>User Profile
+                </div>
+                <div class="card-body text-center">
+                    {% if user.profile_picture %}
+                        <img src="{{ user.profile_picture.url }}" class="rounded-circle mb-3" width="100" height="100" alt="Profile">
+                    {% else %}
+                        <div class="bg-light rounded-circle d-flex align-items-center justify-content-center mb-3" style="width: 100px; height: 100px; margin: 0 auto;">
+                            <i class="fas fa-user text-muted" style="font-size: 3rem;"></i>
+                        </div>
+                    {% endif %}
+                    <h5 class="mb-1">{{ user.get_full_name|default:user.username }}</h5>
+                    <p class="text-muted mb-2">{{ user.get_role_display }}</p>
+                    <span class="badge bg-info">{{ user.department|default:"No Department" }}</span>
+                    
+                    <div class="mt-3">
+                        <a href="{% url 'attendance_web:profile' %}" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-user-edit me-1"></i>Edit Profile
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="card mt-3">
+                <div class="card-header bg-primary text-white">
+                    <i class="fas fa-bolt me-2"></i>Quick Actions
+                </div>
+                <div class="list-group list-group-flush">
+                    {% if user.role == 'hr' or user.role == 'manager' %}
+                        <a href="{% url 'attendance_web:team_attendance' %}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-users me-2"></i>Team Attendance
+                        </a>
+                        <a href="{% url 'attendance_web:pending_approvals' %}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-check-circle me-2"></i>Approvals
+                        </a>
+                    {% endif %}
+                    {% if user.role == 'hr' %}
+                        <a href="{% url 'attendance_web:reports' %}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-chart-bar me-2"></i>Reports
+                        </a>
+                        <a href="{% url 'admin:index' %}" class="list-group-item list-group-item-action" target="_blank">
+                            <i class="fas fa-cog me-2"></i>Admin Panel
+                        </a>
+                    {% endif %}
+                    <a href="{% url 'attendance_web:attendance_list' %}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-history me-2"></i>My Attendance
+                    </a>
+                    <a href="{% url 'attendance_web:face_setup' %}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-user-shield me-2"></i>Face Recognition
+                    </a>
+                </div>
+            </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="col-md-9">
+            <div class="main-content">
+            {% block dashboard_content %}
+            <!-- Content will be overridden by child templates -->
+            {% endblock %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

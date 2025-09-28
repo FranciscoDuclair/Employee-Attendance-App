@@ -4,12 +4,20 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.utils import timezone
 from django.db.models import Q, Sum, Avg, Count, F
-from django_filters.rest_framework import DjangoFilterBackend
+try:
+    from django_filters.rest_framework import DjangoFilterBackend
+except ImportError:
+    DjangoFilterBackend = None
 from rest_framework import filters
 from datetime import datetime, timedelta
 import csv
 from io import StringIO
 from decimal import Decimal, ROUND_HALF_UP
+from django.shortcuts import render
+from django.contrib.auth.decorators import login_required
+from django.http import HttpResponse
+from django.contrib import messages
+from utils.currency import format_currency
 
 from .models import Payroll
 from .serializers import (
@@ -20,14 +28,21 @@ from .serializers import (
 )
 from users.models import User
 from attendance.models import Attendance
+# Import notification utilities
+try:
+    from notifications.utils import send_payroll_notification
+except ImportError:
+    # Fallback if notifications app is not available
+    def send_payroll_notification(*args, **kwargs):
+        pass
 
 
 class PayrollListView(generics.ListAPIView):
     """List all payroll records (HR/Admin only)"""
     serializer_class = PayrollSerializer
     permission_classes = [permissions.IsAuthenticated]
-    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['user', 'month', 'year', 'status', 'department']
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter] if DjangoFilterBackend else [filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields = ['user', 'month', 'year', 'status', 'department'] if DjangoFilterBackend else []
     search_fields = ['user__first_name', 'user__last_name', 'user__employee_id']
     ordering_fields = ['month', 'year', 'gross_pay', 'net_pay', 'created_at']
     ordering = ['-year', '-month', '-created_at']
@@ -73,6 +88,9 @@ class PayrollCreateView(APIView):
             
             # Auto-calculate payroll based on attendance
             self.calculate_payroll(payroll)
+            
+            # Send notification
+            send_payroll_notification(payroll, 'generated')
             
             return Response({
                 'message': 'Payroll record created successfully',
@@ -680,4 +698,155 @@ def auto_generate_payroll(request):
         'message': f'Payroll generation completed. {generated_count} records generated.',
         'generated_count': generated_count,
         'errors': errors
-    })
+    }, status=status.HTTP_200_OK)
+
+
+@login_required
+def generate_payslips_web(request):
+    """Web-based payslip generation view for HR/Admin"""
+    user = request.user
+    
+    # Check if user can generate payslips
+    if not user.can_manage_attendance():
+        return render(request, 'payroll/access_denied.html')
+    
+    if request.method == 'POST':
+        month = request.POST.get('month')
+        year = request.POST.get('year')
+        
+        if not month or not year:
+            messages.error(request, 'Month and year are required.')
+            return render(request, 'payroll/generate_payslips.html')
+        
+        try:
+            # Get all active employees
+            employees = User.objects.filter(is_active=True, role='employee')
+            
+            generated_count = 0
+            errors = []
+            
+            for employee in employees:
+                try:
+                    # Check if payroll already exists
+                    if Payroll.objects.filter(user=employee, month=month, year=year).exists():
+                        continue
+                    
+                    # Create payroll record
+                    payroll = Payroll.objects.create(
+                        user=employee,
+                        month=month,
+                        year=year,
+                        basic_salary=getattr(employee, 'basic_salary', Decimal('0.00')),
+                        hourly_rate=getattr(employee, 'hourly_rate', Decimal('0.00')),
+                        tax_deduction=Decimal('0.00'),
+                        other_deductions=Decimal('0.00'),
+                        status='pending'
+                    )
+                    
+                    # Calculate payroll
+                    view = PayrollCalculationView()
+                    view.calculate_payroll(payroll)
+                    
+                    generated_count += 1
+                    
+                except Exception as e:
+                    errors.append(f"Error generating payroll for {employee.get_full_name()}: {str(e)}")
+            
+            if errors:
+                messages.warning(request, f'Payroll generation completed with {len(errors)} errors. {generated_count} records generated.')
+                for error in errors[:5]:  # Show first 5 errors
+                    messages.error(request, error)
+            else:
+                messages.success(request, f'Payroll generation completed successfully. {generated_count} records generated.')
+                
+        except Exception as e:
+            messages.error(request, f'Error during payroll generation: {str(e)}')
+    
+    context = {
+        'current_month': timezone.now().month,
+        'current_year': timezone.now().year,
+    }
+    
+    return render(request, 'payroll/generate_payslips.html', context)
+
+
+@login_required
+def payroll_web_view(request):
+    """Web-based payroll view for employees"""
+    user = request.user
+    month = request.GET.get('month')
+    year = request.GET.get('year')
+    
+    queryset = Payroll.objects.filter(user=user)
+    
+    if month:
+        queryset = queryset.filter(month=month)
+    if year:
+        queryset = queryset.filter(year=year)
+    
+    # Get recent payroll records
+    payroll_records = queryset.order_by('-year', '-month')
+    
+    # Get current month payroll if exists
+    current_month = timezone.now().month
+    current_year = timezone.now().year
+    current_payroll = queryset.filter(month=current_month, year=current_year).first()
+    
+    context = {
+        'payroll_records': payroll_records,
+        'current_payroll': current_payroll,
+        'month_filter': month,
+        'year_filter': year,
+        'current_month': current_month,
+        'current_year': current_year,
+    }
+    
+    return render(request, 'payroll/my_payroll.html', context)
+
+
+@login_required
+def payslip_download_web(request):
+    """Web-based payslip download"""
+    user = request.user
+    payroll_id = request.GET.get('payroll_id')
+    
+    if payroll_id:
+        try:
+            payroll = Payroll.objects.get(id=payroll_id, user=user)
+        except Payroll.DoesNotExist:
+            return HttpResponse("Payroll record not found", status=404)
+    else:
+        # Get latest payroll record
+        payroll = Payroll.objects.filter(user=user).order_by('-year', '-month').first()
+        if not payroll:
+            return HttpResponse("No payroll records found", status=404)
+    
+    # Generate CSV payslip
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = f'attachment; filename="payslip_{payroll.user.employee_id}_{payroll.month}_{payroll.year}.csv"'
+    
+    writer = csv.writer(response)
+    writer.writerow(['PAYSLIP'])
+    writer.writerow(['Employee ID', payroll.user.employee_id])
+    writer.writerow(['Name', payroll.user.get_full_name()])
+    writer.writerow(['Department', getattr(payroll.user, 'department', 'N/A')])
+    writer.writerow(['Month/Year', f"{payroll.month}/{payroll.year}"])
+    writer.writerow([])
+    writer.writerow(['EARNINGS'])
+    writer.writerow(['Basic Salary', f"${payroll.basic_salary}"])
+    writer.writerow(['Regular Pay', f"${payroll.regular_pay}"])
+    writer.writerow(['Overtime Pay', f"${payroll.overtime_pay}"])
+    writer.writerow(['Gross Pay', f"${payroll.gross_pay}"])
+    writer.writerow([])
+    writer.writerow(['DEDUCTIONS'])
+    writer.writerow(['Tax Deduction', f"${payroll.tax_deduction}"])
+    writer.writerow(['Other Deductions', f"${payroll.other_deductions}"])
+    writer.writerow([])
+    writer.writerow(['NET PAY', f"${payroll.net_pay}"])
+    writer.writerow([])
+    writer.writerow(['HOURS'])
+    writer.writerow(['Total Hours Worked', f"{payroll.total_hours_worked}"])
+    writer.writerow(['Regular Hours', f"{payroll.regular_hours}"])
+    writer.writerow(['Overtime Hours', f"{payroll.overtime_hours}"])
+    
+    return response

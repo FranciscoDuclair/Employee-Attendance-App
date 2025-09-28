@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no, user-scalable=yes, minimum-scale=1.0, maximum-scale=5.0">
+    <title>{% block title %}PulseCheck - Employee Attendance System{% endblock %}</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <!-- Custom Responsive CSS -->
+    {% load static %}
+    <link href="{% static 'css/responsive.css' %}" rel="stylesheet">
+    <!-- PulseCheck Branding CSS -->
+    <link href="{% static 'css/pulsecheck-branding.css' %}" rel="stylesheet">
+    
+    <style>
+        .navbar-brand {
+            font-weight: bold;
+        }
+        .face-camera {
+            width: 100%;
+            max-width: 400px;
+            height: 300px;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            background: #f8f9fa;
+        }
+        .status-badge {
+            font-size: 0.875rem;
+        }
+        .attendance-card {
+            transition: transform 0.2s;
+        }
+        .attendance-card:hover {
+            transform: translateY(-2px);
+        }
+        .face-setup-container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+    </style>
+    
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary sticky-top">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="{% url 'attendance_web:dashboard' %}">
+                <i class="fas fa-heartbeat me-2"></i>
+                <span class="d-none d-sm-inline"><strong>Pulse</strong><span class="text-info">Check</span></span>
+                <span class="d-sm-none"><strong>P</strong><span class="text-info">C</span></span>
+            </a>
+            
+            {% if user.is_authenticated %}
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'attendance_web:dashboard' %}">
+                            <i class="fas fa-tachometer-alt me-1"></i>Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'attendance_web:attendance_list' %}">
+                            <i class="fas fa-list me-1"></i>Attendance
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'attendance_web:face_setup' %}">
+                            <i class="fas fa-user-circle me-1"></i>Face Setup
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'attendance_web:reports' %}">
+                            <i class="fas fa-chart-bar me-1"></i>Reports
+                        </a>
+                    </li>
+                </ul>
+                
+                <ul class="navbar-nav">
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-user me-1"></i>
+                            <span class="d-none d-lg-inline">{{ user.get_full_name|default:user.username }}</span>
+                            <span class="d-lg-none">Account</span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><h6 class="dropdown-header d-lg-none">{{ user.get_full_name|default:user.username }}</h6></li>
+                            <li><a class="dropdown-item" href="{% url 'attendance_web:profile' %}">
+                                <i class="fas fa-user-edit me-2"></i>Profile
+                            </a></li>
+                            <li><a class="dropdown-item" href="{% url 'attendance_web:settings' %}">
+                                <i class="fas fa-cog me-2"></i>Settings
+                            </a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{% url 'attendance_web:logout' %}">
+                                <i class="fas fa-sign-out-alt me-2"></i>Logout
+                            </a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+            {% endif %}
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="container-fluid px-3 px-md-4 mt-4">
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-light mt-5 py-4">
+        <div class="container text-center">
+            <p class="text-muted mb-0">
+                &copy; 2025 <strong>Pulse</strong><span class="text-info">Check</span> - Employee Attendance System. All rights reserved.
+            </p>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Responsive JavaScript -->
+    <script src="{% static 'js/responsive.js' %}"></script>
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,407 @@
+{% extends 'dashboard/base_dashboard.html' %}
+{% load humanize %}
+
+{% block title %}Team Analytics - {{ block.super }}{% endblock %}
+
+{% block dashboard_content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <h1 class="h3 mb-0 text-gray-800">Team Analytics</h1>
+            <div class="d-flex">
+                <button type="button" class="btn btn-outline-primary me-2" data-bs-toggle="modal" data-bs-target="#dateRangeModal">
+                    <i class="far fa-calendar-alt me-1"></i>Date Range
+                </button>
+                <button type="button" class="btn btn-success" onclick="exportData()">
+                    <i class="fas fa-download me-1"></i>Export
+                </button>
+            </div>
+        </div>
+        <p class="text-muted">{{ start_date|date:"M d, Y" }} - {{ end_date|date:"M d, Y" }} ({{ total_days }} days)</p>
+    </div>
+</div>
+
+<!-- Summary Cards -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-primary shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                            Overall Attendance</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ overall_attendance_rate }}%</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-percentage fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-success shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                            Total Records</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_records }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-clipboard-list fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-info shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                            Team Size</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ team_members.count }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-users fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-warning shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                            Period Days</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_days }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-calendar-day fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Status Summary Chart -->
+    <div class="col-xl-6 col-lg-7">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Attendance Status Summary</h6>
+            </div>
+            <div class="card-body">
+                <div class="chart-pie pt-4 pb-2">
+                    <canvas id="statusChart"></canvas>
+                </div>
+                <div class="mt-4 text-center small">
+                    {% for status in status_counts %}
+                    <span class="mr-2">
+                        <i class="fas fa-circle text-{{ status.status|default:'secondary' }}"></i> {{ status.status|title }} ({{ status.count }})
+                    </span>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Daily Trends -->
+    <div class="col-xl-6 col-lg-5">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Daily Attendance Trends</h6>
+            </div>
+            <div class="card-body">
+                <div class="chart-area">
+                    <canvas id="trendsChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Employee Performance Table -->
+<div class="card shadow mb-4">
+    <div class="card-header py-3">
+        <h6 class="m-0 font-weight-bold text-primary">Employee Performance</h6>
+    </div>
+    <div class="card-body">
+        {% if employee_stats %}
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover" width="100%" cellspacing="0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Employee</th>
+                            <th>Total Days</th>
+                            <th>Present</th>
+                            <th>Absent</th>
+                            <th>Late</th>
+                            <th>Attendance Rate</th>
+                            <th>Performance</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for emp in employee_stats %}
+                        <tr>
+                            <td>
+                                <div class="font-weight-bold">{{ emp.user__first_name }} {{ emp.user__last_name }}</div>
+                            </td>
+                            <td>{{ emp.total_days }}</td>
+                            <td>
+                                <span class="badge bg-success">{{ emp.present_days }}</span>
+                            </td>
+                            <td>
+                                <span class="badge bg-danger">{{ emp.absent_days }}</span>
+                            </td>
+                            <td>
+                                <span class="badge bg-warning">{{ emp.late_days }}</span>
+                            </td>
+                            <td>
+                                <div class="progress" style="height: 20px;">
+                                    <div class="progress-bar 
+                                        {% if emp.attendance_rate >= 95 %}bg-success
+                                        {% elif emp.attendance_rate >= 85 %}bg-info
+                                        {% elif emp.attendance_rate >= 75 %}bg-warning
+                                        {% else %}bg-danger{% endif %}" 
+                                        role="progressbar" 
+                                        style="width: {{ emp.attendance_rate }}%"
+                                        aria-valuenow="{{ emp.attendance_rate }}" 
+                                        aria-valuemin="0" 
+                                        aria-valuemax="100">
+                                        {{ emp.attendance_rate }}%
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                {% if emp.attendance_rate >= 95 %}
+                                    <span class="badge bg-success">Excellent</span>
+                                {% elif emp.attendance_rate >= 85 %}
+                                    <span class="badge bg-info">Good</span>
+                                {% elif emp.attendance_rate >= 75 %}
+                                    <span class="badge bg-warning">Average</span>
+                                {% else %}
+                                    <span class="badge bg-danger">Poor</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-chart-line fa-4x text-gray-300 mb-3"></i>
+            <h5 class="text-gray-700">No attendance data found</h5>
+            <p class="text-muted">No attendance records found for the selected period.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Department Summary (if applicable) -->
+{% if dept_attendance %}
+<div class="card shadow mb-4">
+    <div class="card-header py-3">
+        <h6 class="m-0 font-weight-bold text-primary">Department Summary</h6>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-bordered" width="100%" cellspacing="0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Department</th>
+                        <th>Total Records</th>
+                        <th>Present</th>
+                        <th>Attendance Rate</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for dept in dept_attendance %}
+                    <tr>
+                        <td>{{ dept.user__department|default:"No Department" }}</td>
+                        <td>{{ dept.total }}</td>
+                        <td>{{ dept.present }}</td>
+                        <td>
+                            {% if dept.total > 0 %}
+                                {% widthratio dept.present dept.total 100 %}%
+                            {% else %}
+                                0%
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Date Range Modal -->
+<div class="modal fade" id="dateRangeModal" tabindex="-1" aria-labelledby="dateRangeModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="dateRangeModalLabel">Select Date Range</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="get" id="dateRangeForm">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="date_from" class="form-label">From Date</label>
+                        <input type="date" class="form-control" id="date_from" name="date_from" 
+                               value="{{ date_from }}">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="date_to" class="form-label">To Date</label>
+                        <input type="date" class="form-control" id="date_to" name="date_to" 
+                               value="{{ date_to }}">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Apply Filter</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{{ block.super }}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Status Chart
+    const statusCtx = document.getElementById('statusChart').getContext('2d');
+    const statusData = {
+        labels: [{% for status in status_counts %}'{{ status.status|title }}'{% if not forloop.last %},{% endif %}{% endfor %}],
+        datasets: [{
+            data: [{% for status in status_counts %}{{ status.count }}{% if not forloop.last %},{% endif %}{% endfor %}],
+            backgroundColor: ['#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b'],
+            hoverBackgroundColor: ['#2e59d9', '#17a673', '#2c9faf', '#f4b619', '#e02d1b'],
+            hoverBorderColor: "rgba(234, 236, 244, 1)",
+        }],
+    };
+
+    new Chart(statusCtx, {
+        type: 'doughnut',
+        data: statusData,
+        options: {
+            maintainAspectRatio: false,
+            tooltips: {
+                backgroundColor: "rgb(255,255,255)",
+                bodyFontColor: "#858796",
+                borderColor: '#dddfeb',
+                borderWidth: 1,
+                xPadding: 15,
+                yPadding: 15,
+                displayColors: false,
+                caretPadding: 10,
+            },
+            legend: {
+                display: false
+            },
+            cutoutPercentage: 80,
+        },
+    });
+
+    // Trends Chart
+    const trendsCtx = document.getElementById('trendsChart').getContext('2d');
+    const trendsData = {
+        labels: [{% for trend in daily_trends %}'{{ trend.date|date:"M d" }}'{% if not forloop.last %},{% endif %}{% endfor %}],
+        datasets: [{
+            label: 'Present',
+            data: [{% for trend in daily_trends %}{{ trend.present }}{% if not forloop.last %},{% endif %}{% endfor %}],
+            backgroundColor: 'rgba(28, 200, 138, 0.1)',
+            borderColor: 'rgba(28, 200, 138, 1)',
+            borderWidth: 2,
+            fill: true
+        }, {
+            label: 'Absent',
+            data: [{% for trend in daily_trends %}{{ trend.absent }}{% if not forloop.last %},{% endif %}{% endfor %}],
+            backgroundColor: 'rgba(231, 74, 59, 0.1)',
+            borderColor: 'rgba(231, 74, 59, 1)',
+            borderWidth: 2,
+            fill: true
+        }]
+    };
+
+    new Chart(trendsCtx, {
+        type: 'line',
+        data: trendsData,
+        options: {
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            },
+            plugins: {
+                legend: {
+                    display: true
+                }
+            }
+        }
+    });
+});
+
+function exportData() {
+    // Simple CSV export functionality
+    const csvContent = "data:text/csv;charset=utf-8," 
+        + "Employee,Total Days,Present,Absent,Late,Attendance Rate\n"
+        {% for emp in employee_stats %}
+        + "{{ emp.user__first_name }} {{ emp.user__last_name }},{{ emp.total_days }},{{ emp.present_days }},{{ emp.absent_days }},{{ emp.late_days }},{{ emp.attendance_rate }}%\n"
+        {% endfor %};
+    
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "team_analytics_{{ start_date|date:'Y-m-d' }}_{{ end_date|date:'Y-m-d' }}.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+</script>
+{% endblock %}
+
+{% block extra_css %}
+{{ block.super }}
+<style>
+    .table th {
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 0.7rem;
+        letter-spacing: 0.5px;
+    }
+    
+    .table td {
+        vertical-align: middle;
+    }
+    
+    .badge {
+        font-weight: 500;
+        padding: 0.35em 0.65em;
+    }
+    
+    .progress {
+        background-color: #f8f9fc;
+    }
+    
+    .chart-pie, .chart-area {
+        position: relative;
+        height: 15rem;
+    }
+</style>
+{% endblock %}

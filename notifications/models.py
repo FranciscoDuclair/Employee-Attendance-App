@@ -15,6 +15,7 @@ class Notification(models.Model):
         ('shift', 'Shift'),
         ('system', 'System'),
         ('general', 'General'),
+        ('message', 'Message'),
     ]
     
     PRIORITY_CHOICES = [
@@ -26,6 +27,9 @@ class Notification(models.Model):
     
     # Recipient
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notifications')
+    
+    # Sender (optional, for messages)
+    sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sent_notifications', null=True, blank=True)
     
     # Notification content
     title = models.CharField(max_length=200)

@@ -1,0 +1,720 @@
+{% extends 'dashboard/base_dashboard.html' %}
+{% load static %}
+
+{% block title %}Team Performance - {{ block.super }}{% endblock %}
+
+{% block dashboard_content %}
+<div class="card mb-4">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0"><i class="fas fa-chart-line me-2"></i>Team Performance Overview</h5>
+    </div>
+    <div class="card-body">
+        <!-- Date Range Selector -->
+        <form method="get" class="row g-3 mb-4">
+            <div class="col-md-3">
+                <label for="period" class="form-label">Reporting Period</label>
+                <select class="form-select" id="period" name="period" onchange="this.form.submit()">
+                    <option value="7" {% if period_days == 7 %}selected{% endif %}>Last 7 Days</option>
+                    <option value="30" {% if period_days == 30 or not period_days %}selected{% endif %}>Last 30 Days</option>
+                    <option value="90" {% if period_days == 90 %}selected{% endif %}>Last 90 Days</option>
+                    <option value="custom" {% if period_days == 'custom' %}selected{% endif %}>Custom Range</option>
+                </select>
+            </div>
+            
+            <div class="col-md-3 {% if period_days != 'custom' %}d-none{% endif %}" id="startDateContainer">
+                <label for="start_date" class="form-label">Start Date</label>
+                <input type="date" class="form-control" id="start_date" name="start_date" 
+                       value="{{ start_date|date:'Y-m-d' }}" {% if period_days != 'custom' %}disabled{% endif %}>
+            </div>
+            
+            <div class="col-md-3 {% if period_days != 'custom' %}d-none{% endif %}" id="endDateContainer">
+                <label for="end_date" class="form-label">End Date</label>
+                <input type="date" class="form-control" id="end_date" name="end_date" 
+                       value="{{ end_date|date:'Y-m-d' }}" {% if period_days != 'custom' %}disabled{% endif %}>
+            </div>
+            
+            <div class="col-md-3 d-flex align-items-end">
+                <div class="btn-group w-100" role="group">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-sync-alt me-1"></i> Update
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary" onclick="window.print()">
+                        <i class="fas fa-print me-1"></i> Print
+                    </button>
+                </div>
+            </div>
+        </form>
+        
+        <!-- Performance Summary Cards -->
+        <div class="row mb-4">
+            <div class="col-md-3 mb-3">
+                <div class="card border-0 bg-success bg-opacity-10 h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="text-uppercase text-muted small mb-1">On Time Rate</h6>
+                                <h3 class="mb-0 text-success">{{ performance_metrics.on_time|floatformat:1 }}%</h3>
+                                <small class="text-muted">of {{ performance_metrics.total_checks }} check-ins</small>
+                            </div>
+                            <div class="bg-success bg-opacity-25 p-3 rounded-circle">
+                                <i class="fas fa-check-circle text-success" style="font-size: 1.5rem;"></i>
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <div class="progress" style="height: 6px;">
+                                <div class="progress-bar bg-success" role="progressbar" 
+                                     style="width: {{ performance_metrics.on_time }}%" 
+                                     aria-valuenow="{{ performance_metrics.on_time }}" 
+                                     aria-valuemin="0" 
+                                     aria-valuemax="100"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-3 mb-3">
+                <div class="card border-0 bg-warning bg-opacity-10 h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="text-uppercase text-muted small mb-1">Late Arrivals</h6>
+                                <h3 class="mb-0 text-warning">{{ performance_metrics.late|floatformat:1 }}%</h3>
+                                <small class="text-muted">of {{ performance_metrics.total_checks }} check-ins</small>
+                            </div>
+                            <div class="bg-warning bg-opacity-25 p-3 rounded-circle">
+                                <i class="fas fa-clock text-warning" style="font-size: 1.5rem;"></i>
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <div class="progress" style="height: 6px;">
+                                <div class="progress-bar bg-warning" role="progressbar" 
+                                     style="width: {{ performance_metrics.late }}%" 
+                                     aria-valuenow="{{ performance_metrics.late }}" 
+                                     aria-valuemin="0" 
+                                     aria-valuemax="100"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-3 mb-3">
+                <div class="card border-0 bg-danger bg-opacity-10 h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="text-uppercase text-muted small mb-1">Absenteeism</h6>
+                                <h3 class="mb-0 text-danger">{{ performance_metrics.absent|floatformat:1 }}%</h3>
+                                <small class="text-muted">of {{ performance_metrics.total_checks }} check-ins</small>
+                            </div>
+                            <div class="bg-danger bg-opacity-25 p-3 rounded-circle">
+                                <i class="fas fa-user-times text-danger" style="font-size: 1.5rem;"></i>
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <div class="progress" style="height: 6px;">
+                                <div class="progress-bar bg-danger" role="progressbar" 
+                                     style="width: {{ performance_metrics.absent }}%" 
+                                     aria-valuenow="{{ performance_metrics.absent }}" 
+                                     aria-valuemin="0" 
+                                     aria-valuemax="100"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-3 mb-3">
+                <div class="card border-0 bg-info bg-opacity-10 h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="text-uppercase text-muted small mb-1">Team Average</h6>
+                                <h3 class="mb-0 text-info">
+                                    {% with avg=performance_metrics.on_time|add:performance_metrics.late %}
+                                        {{ avg|floatformat:1 }}%
+                                    {% endwith %}
+                                </h3>
+                                <small class="text-muted">attendance rate</small>
+                            </div>
+                            <div class="bg-info bg-opacity-25 p-3 rounded-circle">
+                                <i class="fas fa-users text-info" style="font-size: 1.5rem;"></i>
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <div class="progress" style="height: 6px;">
+                                {% with avg=performance_metrics.on_time|add:performance_metrics.late %}
+                                <div class="progress-bar bg-info" role="progressbar" 
+                                     style="width: {{ avg }}%" 
+                                     aria-valuenow="{{ avg }}" 
+                                     aria-valuemin="0" 
+                                     aria-valuemax="100"></div>
+                                {% endwith %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Performance Charts -->
+        <div class="row mb-4">
+            <div class="col-lg-8 mb-4">
+                <div class="card h-100">
+                    <div class="card-header bg-white border-0">
+                        <h6 class="mb-0">Team Performance Trend</h6>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="performanceTrendChart" height="300"></canvas>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-4 mb-4">
+                <div class="card h-100">
+                    <div class="card-header bg-white border-0">
+                        <h6 class="mb-0">Attendance Distribution</h6>
+                    </div>
+                    <div class="card-body d-flex align-items-center justify-content-center">
+                        <div class="text-center" style="max-width: 300px;">
+                            <canvas id="attendanceDistributionChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Top Performers & Needs Improvement -->
+        <div class="row">
+            <div class="col-lg-6 mb-4">
+                <div class="card h-100">
+                    <div class="card-header bg-white border-0 d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0">Top Performers</h6>
+                        <span class="badge bg-success">On Time ≥ 90%</span>
+                    </div>
+                    <div class="card-body">
+                        {% if top_performers %}
+                            <div class="list-group list-group-flush">
+                                {% for member in top_performers %}
+                                <div class="list-group-item border-0 px-0">
+                                    <div class="d-flex align-items-center">
+                                        <div class="flex-shrink-0">
+                                            {% if member.user.profile_picture %}
+                                                <img src="{{ member.user.profile_picture.url }}" alt="" class="rounded-circle" width="40" height="40">
+                                            {% else %}
+                                                <div class="bg-light rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                                    <i class="fas fa-user text-muted"></i>
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                        <div class="flex-grow-1 ms-3">
+                                            <h6 class="mb-0">{{ member.user.get_full_name }}</h6>
+                                            <div class="d-flex align-items-center">
+                                                <div class="progress flex-grow-1 me-2" style="height: 6px;">
+                                                    <div class="progress-bar bg-success" role="progressbar" 
+                                                         style="width: {{ member.on_time_rate }}%" 
+                                                         aria-valuenow="{{ member.on_time_rate }}" 
+                                                         aria-valuemin="0" 
+                                                         aria-valuemax="100"></div>
+                                                </div>
+                                                <span class="small text-muted">{{ member.on_time_rate|floatformat:1 }}%</span>
+                                            </div>
+                                        </div>
+                                        <div class="text-end">
+                                            <span class="badge bg-success">
+                                                <i class="fas fa-trophy me-1"></i> Top Performer
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <div class="text-center py-4">
+                                <div class="text-muted mb-2">
+                                    <i class="fas fa-star fa-2x"></i>
+                                </div>
+                                <p class="mb-0">No top performers found for the selected period.</p>
+                                <small class="text-muted">Employees with 90%+ on-time rate will appear here.</small>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-6 mb-4">
+                <div class="card h-100">
+                    <div class="card-header bg-white border-0 d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0">Needs Improvement</h6>
+                        <span class="badge bg-warning">On Time ≤ 70%</span>
+                    </div>
+                    <div class="card-body">
+                        {% if needs_improvement %}
+                            <div class="list-group list-group-flush">
+                                {% for member in needs_improvement %}
+                                <div class="list-group-item border-0 px-0">
+                                    <div class="d-flex align-items-center">
+                                        <div class="flex-shrink-0">
+                                            {% if member.user.profile_picture %}
+                                                <img src="{{ member.user.profile_picture.url }}" alt="" class="rounded-circle" width="40" height="40">
+                                            {% else %}
+                                                <div class="bg-light rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                                    <i class="fas fa-user text-muted"></i>
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                        <div class="flex-grow-1 ms-3">
+                                            <h6 class="mb-0">{{ member.user.get_full_name }}</h6>
+                                            <div class="d-flex align-items-center">
+                                                <div class="progress flex-grow-1 me-2" style="height: 6px;">
+                                                    <div class="progress-bar bg-warning" role="progressbar" 
+                                                         style="width: {{ member.on_time_rate }}%" 
+                                                         aria-valuenow="{{ member.on_time_rate }}" 
+                                                         aria-valuemin="0" 
+                                                         aria-valuemax="100"></div>
+                                                </div>
+                                                <span class="small text-muted">{{ member.on_time_rate|floatformat:1 }}%</span>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <button class="btn btn-sm btn-outline-warning" 
+                                                    data-bs-toggle="modal" 
+                                                    data-bs-target="#sendReminderModal"
+                                                    data-user-id="{{ member.user.id }}"
+                                                    data-user-name="{{ member.user.get_full_name }}">
+                                                <i class="fas fa-bell me-1"></i> Remind
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <div class="text-center py-4">
+                                <div class="text-muted mb-2">
+                                    <i class="fas fa-thumbs-up fa-2x"></i>
+                                </div>
+                                <p class="mb-0">No team members need improvement.</p>
+                                <small class="text-muted">Great job! All team members are performing well.</small>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Detailed Performance Table -->
+        <div class="card">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <h6 class="mb-0">Detailed Performance</h6>
+                <div class="btn-group" role="group">
+                    <button type="button" class="btn btn-sm btn-outline-secondary">
+                        <i class="fas fa-download me-1"></i> Export
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-ellipsis-v"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><a class="dropdown-item" href="#">Export as CSV</a></li>
+                        <li><a class="dropdown-item" href="#">Export as PDF</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="#">Print Report</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Team Member</th>
+                            <th class="text-center">Present</th>
+                            <th class="text-center">Late</th>
+                            <th class="text-center">Absent</th>
+                            <th class="text-center">On Time %</th>
+                            <th class="text-center">Attendance %</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for member in member_performance %}
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="flex-shrink-0">
+                                        {% if member.user.profile_picture %}
+                                            <img src="{{ member.user.profile_picture.url }}" alt="" class="rounded-circle" width="36" height="36">
+                                        {% else %}
+                                            <div class="bg-light rounded-circle d-flex align-items-center justify-content-center" style="width: 36px; height: 36px;">
+                                                <i class="fas fa-user text-muted"></i>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="flex-grow-1 ms-3">
+                                        <h6 class="mb-0">{{ member.user.get_full_name }}</h6>
+                                        <small class="text-muted">{{ member.user.position|default:"Team Member" }}</small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="text-center">
+                                <span class="badge bg-success">{{ member.present }}</span>
+                            </td>
+                            <td class="text-center">
+                                <span class="badge bg-warning">{{ member.late }}</span>
+                            </td>
+                            <td class="text-center">
+                                <span class="badge bg-danger">{{ member.absent }}</span>
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="progress flex-grow-1 me-2" style="height: 6px;">
+                                        <div class="progress-bar bg-success" role="progressbar" 
+                                             style="width: {{ member.on_time_rate }}%" 
+                                             aria-valuenow="{{ member.on_time_rate }}" 
+                                             aria-valuemin="0" 
+                                             aria-valuemax="100"></div>
+                                    </div>
+                                    <span class="small">{{ member.on_time_rate|floatformat:1 }}%</span>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="progress flex-grow-1 me-2" style="height: 6px;">
+                                        <div class="progress-bar bg-primary" role="progressbar" 
+                                             style="width: {{ member.attendance_rate }}%" 
+                                             aria-valuenow="{{ member.attendance_rate }}" 
+                                             aria-valuemin="0" 
+                                             aria-valuemax="100"></div>
+                                    </div>
+                                    <span class="small">{{ member.attendance_rate|floatformat:1 }}%</span>
+                                </div>
+                            </td>
+                            <td class="text-end">
+                                <div class="btn-group" role="group">
+                                    <a href="{% url 'attendance_web:employee_attendance' member.user.id %}" 
+                                       class="btn btn-sm btn-outline-primary" 
+                                       data-bs-toggle="tooltip" 
+                                       title="View Details">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <button class="btn btn-sm btn-outline-warning" 
+                                            data-bs-toggle="tooltip" 
+                                            title="Send Reminder"
+                                            data-bs-toggle="modal" 
+                                            data-bs-target="#sendReminderModal"
+                                            data-user-id="{{ member.user.id }}"
+                                            data-user-name="{{ member.user.get_full_name }}">
+                                        <i class="fas fa-bell"></i>
+                                    </button>
+                                    <a href="#" class="btn btn-sm btn-outline-secondary" data-bs-toggle="tooltip" title="Message">
+                                        <i class="fas fa-envelope"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="7" class="text-center py-4">
+                                <div class="text-muted">
+                                    <i class="fas fa-inbox fa-2x mb-2"></i>
+                                    <p class="mb-0">No team members found or no attendance data available.</p>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Send Reminder Modal -->
+<div class="modal fade" id="sendReminderModal" tabindex="-1" aria-labelledby="sendReminderModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="sendReminderModalLabel">Send Reminder</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" action="{% url 'attendance_web:send_reminder' %}">
+                <div class="modal-body">
+                    {% csrf_token %}
+                    <input type="hidden" name="user_id" id="reminder_user_id" value="">
+                    
+                    <div class="mb-3">
+                        <label for="reminder_message" class="form-label">Message to <span id="employeeName">Employee</span></label>
+                        <textarea class="form-control" id="reminder_message" name="message" rows="4" required>Dear [Employee],
+
+I noticed your attendance could use some improvement. Let's work together to ensure consistent attendance.
+
+Best regards,
+{{ request.user.get_full_name }}</textarea>
+                        <div class="form-text">You can customize the message above.</div>
+                    </div>
+                    
+                    <div class="form-check form-switch mb-3">
+                        <input class="form-check-input" type="checkbox" id="send_email" name="send_email" checked>
+                        <label class="form-check-label" for="send_email">Send as email notification</label>
+                    </div>
+                    
+                    <div class="form-check form-switch mb-3">
+                        <input class="form-check-input" type="checkbox" id="schedule_meeting" name="schedule_meeting">
+                        <label class="form-check-label" for="schedule_meeting">Schedule a 1:1 meeting</label>
+                    </div>
+                    
+                    <div id="meetingOptions" class="p-3 bg-light rounded d-none">
+                        <div class="mb-3">
+                            <label for="meeting_date" class="form-label">Meeting Date</label>
+                            <input type="datetime-local" class="form-control" id="meeting_date" name="meeting_date">
+                        </div>
+                        <div class="mb-3">
+                            <label for="meeting_notes" class="form-label">Agenda</label>
+                            <textarea class="form-control" id="meeting_notes" name="meeting_notes" rows="2" placeholder="What would you like to discuss?"></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-paper-plane me-1"></i> Send Reminder
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .progress-thin {
+        height: 4px;
+    }
+    .progress-sm {
+        height: 8px;
+    }
+    .avatar-sm {
+        width: 32px;
+        height: 32px;
+    }
+    .avatar-md {
+        width: 40px;
+        height: 40px;
+    }
+    .avatar-lg {
+        width: 60px;
+        height: 60px;
+    }
+    .text-underline {
+        text-decoration: underline;
+        text-decoration-style: dotted;
+    }
+    .cursor-pointer {
+        cursor: pointer;
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Initialize tooltips
+var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+    return new bootstrap.Tooltip(tooltipTriggerEl)
+});
+
+// Handle period selector change
+const periodSelect = document.getElementById('period');
+const startDateContainer = document.getElementById('startDateContainer');
+const endDateContainer = document.getElementById('endDateContainer');
+const startDateInput = document.getElementById('start_date');
+const endDateInput = document.getElementById('end_date');
+
+if (periodSelect) {
+    periodSelect.addEventListener('change', function() {
+        if (this.value === 'custom') {
+            startDateContainer.classList.remove('d-none');
+            endDateContainer.classList.remove('d-none');
+            startDateInput.removeAttribute('disabled');
+            endDateInput.removeAttribute('disabled');
+        } else {
+            startDateContainer.classList.add('d-none');
+            endDateContainer.classList.add('d-none');
+            startDateInput.setAttribute('disabled', 'disabled');
+            endDateInput.setAttribute('disabled', 'disabled');
+        }
+    });
+}
+
+// Handle schedule meeting checkbox
+const scheduleMeetingCheckbox = document.getElementById('schedule_meeting');
+const meetingOptions = document.getElementById('meetingOptions');
+
+if (scheduleMeetingCheckbox) {
+    scheduleMeetingCheckbox.addEventListener('change', function() {
+        if (this.checked) {
+            meetingOptions.classList.remove('d-none');
+            // Set default meeting time to tomorrow at 10 AM
+            const tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            tomorrow.setHours(10, 0, 0, 0);
+            
+            // Format the date to YYYY-MM-DDThh:mm
+            const year = tomorrow.getFullYear();
+            const month = String(tomorrow.getMonth() + 1).padStart(2, '0');
+            const day = String(tomorrow.getDate()).padStart(2, '0');
+            const hours = String(tomorrow.getHours()).padStart(2, '0');
+            const minutes = String(tomorrow.getMinutes()).padStart(2, '0');
+            
+            document.getElementById('meeting_date').value = `${year}-${month}-${day}T${hours}:${minutes}`;
+        } else {
+            meetingOptions.classList.add('d-none');
+        }
+    });
+}
+
+// Handle send reminder modal
+var sendReminderModal = document.getElementById('sendReminderModal');
+if (sendReminderModal) {
+    sendReminderModal.addEventListener('show.bs.modal', function (event) {
+        var button = event.relatedTarget;
+        var userId = button.getAttribute('data-user-id');
+        var userName = button.getAttribute('data-user-name');
+        
+        // Update the modal's content
+        var modalTitle = sendReminderModal.querySelector('.modal-title');
+        var employeeName = sendReminderModal.querySelector('#employeeName');
+        var userIdInput = sendReminderModal.querySelector('#reminder_user_id');
+        
+        modalTitle.textContent = 'Send Reminder to ' + userName;
+        employeeName.textContent = userName;
+        userIdInput.value = userId;
+        
+        // Update the message with the employee's name
+        var messageTextarea = sendReminderModal.querySelector('#reminder_message');
+        messageTextarea.value = messageTextarea.value.replace(/\[Employee\]/g, userName);
+    });
+}
+
+// Performance Trend Chart
+const performanceTrendCtx = document.getElementById('performanceTrendChart');
+if (performanceTrendCtx) {
+    // This is sample data - replace with actual data from your backend
+    const performanceTrendData = {
+        labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
+        datasets: [
+            {
+                label: 'On Time',
+                data: [85, 82, 88, 90],
+                borderColor: '#28a745',
+                backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                tension: 0.3,
+                fill: true
+            },
+            {
+                label: 'Late',
+                data: [10, 12, 8, 7],
+                borderColor: '#ffc107',
+                backgroundColor: 'rgba(255, 193, 7, 0.1)',
+                tension: 0.3,
+                fill: true
+            },
+            {
+                label: 'Absent',
+                data: [5, 6, 4, 3],
+                borderColor: '#dc3545',
+                backgroundColor: 'rgba(220, 53, 69, 0.1)',
+                tension: 0.3,
+                fill: true
+            }
+        ]
+    };
+    
+    new Chart(performanceTrendCtx, {
+        type: 'line',
+        data: performanceTrendData,
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'top',
+                },
+                tooltip: {
+                    mode: 'index',
+                    intersect: false,
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 100,
+                    title: {
+                        display: true,
+                        text: 'Percentage (%)'
+                    }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Week'
+                    }
+                }
+            }
+        }
+    });
+}
+
+// Attendance Distribution Chart
+const attendanceDistributionCtx = document.getElementById('attendanceDistributionChart');
+if (attendanceDistributionCtx) {
+    // This is sample data - replace with actual data from your backend
+    const attendanceDistributionData = {
+        labels: ['On Time', 'Late', 'Absent'],
+        datasets: [{
+            data: [{{ performance_metrics.on_time|default:0 }}, {{ performance_metrics.late|default:0 }}, {{ performance_metrics.absent|default:0 }}],
+            backgroundColor: [
+                'rgba(40, 167, 69, 0.8)',
+                'rgba(255, 193, 7, 0.8)',
+                'rgba(220, 53, 69, 0.8)'
+            ],
+            borderColor: [
+                'rgba(40, 167, 69, 1)',
+                'rgba(255, 193, 7, 1)',
+                'rgba(220, 53, 69, 1)'
+            ],
+            borderWidth: 1
+        }]
+    };
+    
+    new Chart(attendanceDistributionCtx, {
+        type: 'doughnut',
+        data: attendanceDistributionData,
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const label = context.label || '';
+                            const value = context.raw || 0;
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const percentage = total > 0 ? Math.round((value / total) * 100) : 0;
+                            return `${label}: ${value} (${percentage}%)`;
+                        }
+                    }
+                }
+            },
+            cutout: '70%',
+            radius: '90%'
+        }
+    });
+}
+</script>
+{% endblock %}

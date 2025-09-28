@@ -1,0 +1,259 @@
+{% extends 'dashboard/base_dashboard.html' %}
+{% load humanize %}
+{% load currency_tags %}
+
+{% block title %}Generate Payslips - {{ block.super }}{% endblock %}
+
+{% block dashboard_content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <h1 class="h3 mb-0 text-gray-800">Generate Payslips</h1>
+            <a href="{% url 'attendance_web:dashboard' %}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-1"></i>Back to Dashboard
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Payslip Generation</h6>
+            </div>
+            <div class="card-body">
+                <form method="post" id="payslipForm">
+                    {% csrf_token %}
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="month" class="form-label">Month <span class="text-danger">*</span></label>
+                            <select class="form-select" id="month" name="month" required>
+                                <option value="">Select Month</option>
+                                <option value="1" {% if current_month == 1 %}selected{% endif %}>January</option>
+                                <option value="2" {% if current_month == 2 %}selected{% endif %}>February</option>
+                                <option value="3" {% if current_month == 3 %}selected{% endif %}>March</option>
+                                <option value="4" {% if current_month == 4 %}selected{% endif %}>April</option>
+                                <option value="5" {% if current_month == 5 %}selected{% endif %}>May</option>
+                                <option value="6" {% if current_month == 6 %}selected{% endif %}>June</option>
+                                <option value="7" {% if current_month == 7 %}selected{% endif %}>July</option>
+                                <option value="8" {% if current_month == 8 %}selected{% endif %}>August</option>
+                                <option value="9" {% if current_month == 9 %}selected{% endif %}>September</option>
+                                <option value="10" {% if current_month == 10 %}selected{% endif %}>October</option>
+                                <option value="11" {% if current_month == 11 %}selected{% endif %}>November</option>
+                                <option value="12" {% if current_month == 12 %}selected{% endif %}>December</option>
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="year" class="form-label">Year <span class="text-danger">*</span></label>
+                            <select class="form-select" id="year" name="year" required>
+                                <option value="">Select Year</option>
+                                {% for year in "2023 2024 2025 2026"|make_list %}
+                                <option value="{{ year }}" {% if current_year|stringformat:"s" == year %}selected{% endif %}>{{ year }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-info" role="alert">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Note:</strong> This will generate payslips for all active employees for the selected month and year. Existing payslips for the same period will be skipped.
+                    </div>
+                    
+                    <div class="d-flex justify-content-end">
+                        <button type="button" class="btn btn-secondary me-2" onclick="resetForm()">Reset</button>
+                        <button type="submit" class="btn btn-primary" id="generateBtn">
+                            <i class="fas fa-cogs me-1"></i>Generate Payslips
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <!-- Info Card -->
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Generation Info</h6>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <h6 class="text-gray-800">What happens during generation?</h6>
+                    <ul class="list-unstyled small text-muted">
+                        <li><i class="fas fa-check text-success me-1"></i> Creates payroll records for all active employees</li>
+                        <li><i class="fas fa-calculator text-info me-1"></i> Calculates gross pay, deductions, and net pay</li>
+                        <li><i class="fas fa-clock text-warning me-1"></i> Sets status to 'pending' for review</li>
+                        <li><i class="fas fa-skip-forward text-secondary me-1"></i> Skips employees with existing payslips</li>
+                    </ul>
+                </div>
+                
+                <div class="alert alert-warning" role="alert">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>Important:</strong> Make sure employee salary information is up to date before generating payslips.
+                </div>
+            </div>
+        </div>
+        
+        <!-- Quick Actions -->
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Quick Actions</h6>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <button type="button" class="btn btn-outline-primary btn-sm" onclick="setCurrentMonth()">
+                        <i class="fas fa-calendar-month me-1"></i>Current Month
+                    </button>
+                    <button type="button" class="btn btn-outline-primary btn-sm" onclick="setPreviousMonth()">
+                        <i class="fas fa-calendar-minus me-1"></i>Previous Month
+                    </button>
+                    <a href="#" class="btn btn-outline-info btn-sm">
+                        <i class="fas fa-list me-1"></i>View Existing Payslips
+                    </a>
+                    <a href="#" class="btn btn-outline-success btn-sm">
+                        <i class="fas fa-chart-bar me-1"></i>Payroll Reports
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Status Card -->
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">System Status</h6>
+            </div>
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-2">
+                    <div class="me-3">
+                        <div class="bg-success rounded-circle d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                            <i class="fas fa-check text-white"></i>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="font-weight-bold small">System Ready</div>
+                        <div class="text-muted small">All systems operational</div>
+                    </div>
+                </div>
+                
+                <div class="small text-muted">
+                    Last generation: <span class="text-dark">Never</span><br>
+                    Active employees: <span class="text-dark">Loading...</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{{ block.super }}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Set default to current month/year
+    setCurrentMonth();
+    
+    // Form validation and submission
+    const form = document.getElementById('payslipForm');
+    const generateBtn = document.getElementById('generateBtn');
+    
+    form.addEventListener('submit', function(e) {
+        const month = document.getElementById('month').value;
+        const year = document.getElementById('year').value;
+        
+        if (!month || !year) {
+            e.preventDefault();
+            alert('Please select both month and year.');
+            return false;
+        }
+        
+        // Show loading state
+        generateBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Generating...';
+        generateBtn.disabled = true;
+        
+        // Re-enable button after 30 seconds (in case of timeout)
+        setTimeout(function() {
+            generateBtn.innerHTML = '<i class="fas fa-cogs me-1"></i>Generate Payslips';
+            generateBtn.disabled = false;
+        }, 30000);
+    });
+});
+
+function setCurrentMonth() {
+    const now = new Date();
+    document.getElementById('month').value = now.getMonth() + 1;
+    document.getElementById('year').value = now.getFullYear();
+}
+
+function setPreviousMonth() {
+    const now = new Date();
+    const prevMonth = now.getMonth(); // getMonth() is 0-indexed, so this gives us previous month
+    const year = prevMonth === 0 ? now.getFullYear() - 1 : now.getFullYear();
+    const month = prevMonth === 0 ? 12 : prevMonth;
+    
+    document.getElementById('month').value = month;
+    document.getElementById('year').value = year;
+}
+
+function resetForm() {
+    document.getElementById('payslipForm').reset();
+    setCurrentMonth();
+}
+
+// Load employee count
+fetch('/api/auth/users/')
+    .then(response => response.json())
+    .then(data => {
+        const activeCount = data.results ? data.results.filter(u => u.is_active && u.role === 'employee').length : 'Unknown';
+        document.querySelector('.text-dark').textContent = activeCount;
+    })
+    .catch(error => {
+        console.log('Could not load employee count');
+    });
+</script>
+{% endblock %}
+
+{% block extra_css %}
+{{ block.super }}
+<style>
+    .form-label {
+        font-weight: 600;
+        color: #5a5c69;
+    }
+    
+    .form-control:focus,
+    .form-select:focus {
+        border-color: #4e73df;
+        box-shadow: 0 0 0 0.2rem rgba(78, 115, 223, 0.25);
+    }
+    
+    .card {
+        border: none;
+        border-radius: 0.35rem;
+    }
+    
+    .alert-info {
+        background-color: #d1ecf1;
+        border-color: #bee5eb;
+        color: #0c5460;
+    }
+    
+    .alert-warning {
+        background-color: #fff3cd;
+        border-color: #ffeaa7;
+        color: #856404;
+    }
+    
+    .btn-outline-primary:hover {
+        color: #fff;
+        background-color: #4e73df;
+        border-color: #4e73df;
+    }
+    
+    .bg-success {
+        background-color: #1cc88a !important;
+    }
+</style>
+{% endblock %}

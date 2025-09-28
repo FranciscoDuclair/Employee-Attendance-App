@@ -1,0 +1,563 @@
+{% extends 'dashboard/base_dashboard.html' %}
+{% load static %}
+
+{% block title %}System Settings - {{ block.super }}{% endblock %}
+
+{% block dashboard_content %}
+<div class="row">
+    <div class="col-lg-3 mb-4">
+        <div class="card h-100">
+            <div class="card-header bg-white border-0">
+                <h6 class="mb-0">Settings Menu</h6>
+            </div>
+            <div class="list-group list-group-flush">
+                <a href="#general" class="list-group-item list-group-item-action active" data-bs-toggle="list">
+                    <i class="fas fa-cog me-2"></i> General Settings
+                </a>
+                <a href="#attendance" class="list-group-item list-group-item-action" data-bs-toggle="list">
+                    <i class="fas fa-user-clock me-2"></i> Attendance
+                </a>
+                <a href="#face-recognition" class="list-group-item list-group-item-action" data-bs-toggle="list">
+                    <i class="fas fa-user-shield me-2"></i> Face Recognition
+                </a>
+                <a href="#notifications" class="list-group-item list-group-item-action" data-bs-toggle="list">
+                    <i class="fas fa-bell me-2"></i> Notifications
+                </a>
+                <a href="#email" class="list-group-item list-group-item-action" data-bs-toggle="list">
+                    <i class="fas fa-envelope me-2"></i> Email Settings
+                </a>
+                <a href="#security" class="list-group-item list-group-item-action" data-bs-toggle="list">
+                    <i class="fas fa-shield-alt me-2"></i> Security
+                </a>
+                <a href="#backup" class="list-group-item list-group-item-action" data-bs-toggle="list">
+                    <i class="fas fa-database me-2"></i> Backup & Restore
+                </a>
+                <a href="#about" class="list-group-item list-group-item-action" data-bs-toggle="list">
+                    <i class="fas fa-info-circle me-2"></i> About
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-9">
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            
+            <div class="tab-content">
+                <!-- General Settings Tab -->
+                <div class="tab-pane fade show active" id="general">
+                    <div class="card mb-4">
+                        <div class="card-header bg-white">
+                            <h5 class="mb-0">General Settings</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label for="company_name" class="form-label">Company Name</label>
+                                <input type="text" class="form-control" id="company_name" name="company_name" 
+                                       value="{{ settings.company_name|default:'Your Company' }}" required>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="timezone" class="form-label">Time Zone</label>
+                                <select class="form-select" id="timezone" name="timezone" required>
+                                    <option value="">Select a timezone</option>
+                                    <option value="UTC" {% if settings.timezone == 'UTC' %}selected{% endif %}>UTC</option>
+                                    <option value="America/New_York" {% if settings.timezone == 'America/New_York' %}selected{% endif %}>Eastern Time (US & Canada)</option>
+                                    <option value="America/Chicago" {% if settings.timezone == 'America/Chicago' %}selected{% endif %}>Central Time (US & Canada)</option>
+                                    <option value="America/Denver" {% if settings.timezone == 'America/Denver' %}selected{% endif %}>Mountain Time (US & Canada)</option>
+                                    <option value="America/Los_Angeles" {% if settings.timezone == 'America/Los_Angeles' %}selected{% endif %}>Pacific Time (US & Canada)</option>
+                                    <!-- Add more timezones as needed -->
+                                </select>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="date_format" class="form-label">Date Format</label>
+                                <select class="form-select" id="date_format" name="date_format" required>
+                                    <option value="Y-m-d" {% if settings.date_format == 'Y-m-d' %}selected{% endif %}>YYYY-MM-DD (2023-12-31)</option>
+                                    <option value="m/d/Y" {% if settings.date_format == 'm/d/Y' %}selected{% endif %}>MM/DD/YYYY (12/31/2023)</option>
+                                    <option value="d/m/Y" {% if settings.date_format == 'd/m/Y' %}selected{% endif %}>DD/MM/YYYY (31/12/2023)</option>
+                                    <option value="F j, Y" {% if settings.date_format == 'F j, Y' %}selected{% endif %}>Month Day, Year (December 31, 2023)</option>
+                                </select>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="time_format" class="form-label">Time Format</label>
+                                <select class="form-select" id="time_format" name="time_format" required>
+                                    <option value="H:i" {% if settings.time_format == 'H:i' %}selected{% endif %}>24-hour (14:30)</option>
+                                    <option value="h:i A" {% if settings.time_format == 'h:i A' %}selected{% endif %}>12-hour (2:30 PM)</option>
+                                </select>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="items_per_page" class="form-label">Items Per Page</label>
+                                <input type="number" class="form-control" id="items_per_page" name="items_per_page" 
+                                       min="5" max="100" value="{{ settings.items_per_page|default:25 }}" required>
+                                <div class="form-text">Number of items to display per page in lists and tables.</div>
+                            </div>
+                            
+                            <div class="form-check form-switch mb-3">
+                                <input class="form-check-input" type="checkbox" id="maintenance_mode" name="maintenance_mode" 
+                                       {% if settings.maintenance_mode %}checked{% endif %}>
+                                <label class="form-check-label" for="maintenance_mode">Maintenance Mode</label>
+                                <div class="form-text">When enabled, only administrators can access the system.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Attendance Settings Tab -->
+                <div class="tab-pane fade" id="attendance">
+                    <div class="card mb-4">
+                        <div class="card-header bg-white">
+                            <h5 class="mb-0">Attendance Settings</h5>
+                        </div>
+                        <div class="card-body">
+                            <h6 class="mb-3">Work Hours</h6>
+                            <div class="row mb-4">
+                                <div class="col-md-6">
+                                    <label for="workday_start" class="form-label">Workday Start Time</label>
+                                    <input type="time" class="form-control" id="workday_start" name="workday_start" 
+                                           value="{{ settings.workday_start|default:'09:00' }}" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="workday_end" class="form-label">Workday End Time</label>
+                                    <input type="time" class="form-control" id="workday_end" name="workday_end" 
+                                           value="{{ settings.workday_end|default:'17:00' }}" required>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-4">
+                                <h6 class="mb-3">Lunch Break</h6>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <label for="lunch_start" class="form-label">Lunch Start Time</label>
+                                        <input type="time" class="form-control" id="lunch_start" name="lunch_start" 
+                                               value="{{ settings.lunch_start|default:'12:00' }}">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="lunch_end" class="form-label">Lunch End Time</label>
+                                        <input type="time" class="form-control" id="lunch_end" name="lunch_end" 
+                                               value="{{ settings.lunch_end|default:'13:00' }}">
+                                    </div>
+                                </div>
+                                <div class="form-text">Leave empty to disable automatic lunch break deduction.</div>
+                            </div>
+                            
+                            <div class="mb-4">
+                                <h6 class="mb-3">Late Arrival & Early Departure</h6>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <label for="grace_period" class="form-label">Grace Period (minutes)</label>
+                                        <input type="number" class="form-control" id="grace_period" name="grace_period" 
+                                               min="0" max="60" value="{{ settings.grace_period|default:15 }}">
+                                        <div class="form-text">Allowed minutes after start time before marking as late.</div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="early_departure" class="form-label">Early Departure (minutes)</label>
+                                        <input type="number" class="form-control" id="early_departure" name="early_departure" 
+                                               min="0" max="240" value="{{ settings.early_departure|default:30 }}">
+                                        <div class="form-text">Allowed minutes before end time to leave without penalty.</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <h6 class="mb-3">Work Week</h6>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="checkbox" id="monday" name="work_days" value="1" 
+                                           {% if 1 in settings.work_days %}checked{% endif %}>
+                                    <label class="form-check-label" for="monday">Monday</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="checkbox" id="tuesday" name="work_days" value="2" 
+                                           {% if 2 in settings.work_days %}checked{% endif %}>
+                                    <label class="form-check-label" for="tuesday">Tuesday</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="checkbox" id="wednesday" name="work_days" value="3" 
+                                           {% if 3 in settings.work_days %}checked{% endif %}>
+                                    <label class="form-check-label" for="wednesday">Wednesday</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="checkbox" id="thursday" name="work_days" value="4" 
+                                           {% if 4 in settings.work_days %}checked{% endif %}>
+                                    <label class="form-check-label" for="thursday">Thursday</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="checkbox" id="friday" name="work_days" value="5" 
+                                           {% if 5 in settings.work_days %}checked{% endif %}>
+                                    <label class="form-check-label" for="friday">Friday</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="checkbox" id="saturday" name="work_days" value="6" 
+                                           {% if 6 in settings.work_days %}checked{% endif %}>
+                                    <label class="form-check-label" for="saturday">Saturday</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="checkbox" id="sunday" name="work_days" value="0" 
+                                           {% if 0 in settings.work_days %}checked{% endif %}>
+                                    <label class="form-check-label" for="sunday">Sunday</label>
+                                </div>
+                            </div>
+                            
+                            <div class="form-check form-switch mb-3">
+                                <input class="form-check-input" type="checkbox" id="overtime_enabled" name="overtime_enabled" 
+                                       {% if settings.overtime_enabled %}checked{% endif %}>
+                                <label class="form-check-label" for="overtime_enabled">Enable Overtime Tracking</label>
+                                <div class="form-text">Track and calculate overtime hours for employees.</div>
+                            </div>
+                            
+                            <div id="overtimeSettings" class="p-3 bg-light rounded mb-3" 
+                                 style="display: {% if settings.overtime_enabled %}block{% else %}none{% endif %};">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <label for="daily_overtime" class="form-label">Daily Overtime (hours)</label>
+                                        <input type="number" class="form-control" id="daily_overtime" name="daily_overtime" 
+                                               min="0" step="0.5" value="{{ settings.daily_overtime|default:8 }}">
+                                        <div class="form-text">Hours per day before overtime applies.</div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="weekly_overtime" class="form-label">Weekly Overtime (hours)</label>
+                                        <input type="number" class="form-control" id="weekly_overtime" name="weekly_overtime" 
+                                               min="0" step="0.5" value="{{ settings.weekly_overtime|default:40 }}">
+                                        <div class="form-text">Hours per week before overtime applies.</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Face Recognition Settings Tab -->
+                <div class="tab-pane fade" id="face-recognition">
+                    <div class="card mb-4">
+                        <div class="card-header bg-white">
+                            <h5 class="mb-0">Face Recognition Settings</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle me-2"></i>
+                                Face recognition settings control how the system verifies employee identities.
+                            </div>
+                            
+                            <div class="form-check form-switch mb-3">
+                                <input class="form-check-input" type="checkbox" id="face_recognition_enabled" name="face_recognition_enabled" 
+                                       {% if settings.face_recognition_enabled %}checked{% endif %}>
+                                <label class="form-check-label" for="face_recognition_enabled">Enable Face Recognition</label>
+                                <div class="form-text">Require face recognition for attendance check-in/out.</div>
+                            </div>
+                            
+                            <div id="faceRecognitionSettings" class="p-3 bg-light rounded mb-3{% if not settings.face_recognition_enabled %} d-none{% endif %}">
+                                <div class="mb-3">
+                                    <label for="face_confidence" class="form-label">Confidence Threshold</label>
+                                    <input type="range" class="form-range" id="face_confidence" name="face_confidence" 
+                                           min="50" max="99" step="1" value="{{ settings.face_confidence|default:80 }}">
+                                    <div class="d-flex justify-content-between">
+                                        <small>Low (more lenient)</small>
+                                        <small>High (more strict)</small>
+                                    </div>
+                                    <div class="form-text">
+                                        Current threshold: <span id="confidenceValue">{{ settings.face_confidence|default:80 }}</span>% 
+                                        - Higher values increase security but may cause more false negatives.
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="max_face_distance" class="form-label">Maximum Face Distance (meters)</label>
+                                    <input type="number" class="form-control" id="max_face_distance" name="max_face_distance" 
+                                           min="0.1" max="5" step="0.1" value="{{ settings.max_face_distance|default:1.0 }}">
+                                    <div class="form-text">Maximum distance from the camera for face detection.</div>
+                                </div>
+                                
+                                <div class="form-check form-switch mb-3">
+                                    <input class="form-check-input" type="checkbox" id="require_liveness" name="require_liveness" 
+                                           {% if settings.require_liveness %}checked{% endif %}>
+                                    <label class="form-check-label" for="require_liveness">Require Liveness Detection</label>
+                                    <div class="form-text">Prevent spoofing by requiring the user to blink or move their head.</div>
+                                </div>
+                                
+                                <div class="form-check form-switch mb-3">
+                                    <input class="form-check-input" type="checkbox" id="store_face_data" name="store_face_data" 
+                                           {% if settings.store_face_data %}checked{% endif %}>
+                                    <label class="form-check-label" for="store_face_data">Store Face Data</label>
+                                    <div class="form-text">Store face encodings for faster recognition. Disable to process all images on the fly.</div>
+                                </div>
+                                
+                                <div class="alert alert-warning">
+                                    <i class="fas fa-exclamation-triangle me-2"></i>
+                                    <strong>Privacy Note:</strong> Face data is stored securely and used only for attendance verification.
+                                    <a href="#" class="alert-link">Learn more about our privacy policy</a>.
+                                </div>
+                            </div>
+                            
+                            <div class="d-flex justify-content-between align-items-center mt-4">
+                                <div>
+                                    <h6>Face Recognition Status</h6>
+                                    <div class="d-flex align-items-center">
+                                        <div class="me-3">
+                                            <div class="spinner-border spinner-border-sm text-primary me-2" role="status">
+                                                <span class="visually-hidden">Loading...</span>
+                                            </div>
+                                            <span class="text-muted">Checking system compatibility...</span>
+                                        </div>
+                                        <button type="button" class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-sync-alt me-1"></i> Test Face Recognition
+                                        </button>
+                                    </div>
+                                </div>
+                                <div>
+                                    <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#resetFaceDataModal">
+                                        <i class="fas fa-trash-alt me-1"></i> Reset All Face Data
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Other tabs with similar structure would go here -->
+                
+                <!-- About Tab -->
+                <div class="tab-pane fade" id="about">
+                    <div class="card">
+                        <div class="card-header bg-white">
+                            <h5 class="mb-0">About Attendance System</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="text-center mb-4">
+                                <img src="{% static 'img/logo.png' %}" alt="Logo" class="img-fluid mb-3" style="max-height: 80px;">
+                                <h4>Employee Attendance System</h4>
+                                <p class="text-muted">Version 2.5.1</p>
+                            </div>
+                            
+                            <div class="row mb-4">
+                                <div class="col-md-6">
+                                    <div class="card h-100">
+                                        <div class="card-body">
+                                            <h6 class="card-title">System Information</h6>
+                                            <ul class="list-unstyled">
+                                                <li class="mb-2">
+                                                    <i class="fas fa-server text-primary me-2"></i>
+                                                    <strong>Server:</strong> {{ server_info.name }} ({{ server_info.host }})
+                                                </li>
+                                                <li class="mb-2">
+                                                    <i class="fas fa-database text-primary me-2"></i>
+                                                    <strong>Database:</strong> {{ server_info.database }}
+                                                </li>
+                                                <li class="mb-2">
+                                                    <i class="fas fa-code-branch text-primary me-2"></i>
+                                                    <strong>Version:</strong> {{ server_info.version }}
+                                                </li>
+                                                <li class="mb-2">
+                                                    <i class="fas fa-calendar-alt text-primary me-2"></i>
+                                                    <strong>Last Updated:</strong> {{ server_info.last_updated }}
+                                                </li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="card h-100">
+                                        <div class="card-body">
+                                            <h6 class="card-title">Support</h6>
+                                            <p>Need help? Contact our support team for assistance.</p>
+                                            <ul class="list-unstyled">
+                                                <li class="mb-2">
+                                                    <i class="fas fa-envelope text-primary me-2"></i>
+                                                    <a href="mailto:support@example.com">support@example.com</a>
+                                                </li>
+                                                <li class="mb-2">
+                                                    <i class="fas fa-phone text-primary me-2"></i>
+                                                    <a href="tel:+1234567890">+1 (234) 567-890</a>
+                                                </li>
+                                                <li class="mb-2">
+                                                    <i class="fas fa-globe text-primary me-2"></i>
+                                                    <a href="https://example.com/support" target="_blank">example.com/support</a>
+                                                </li>
+                                            </ul>
+                                            <div class="mt-3">
+                                                <button type="button" class="btn btn-outline-primary btn-sm me-2">
+                                                    <i class="fas fa-book me-1"></i> Documentation
+                                                </button>
+                                                <button type="button" class="btn btn-outline-secondary btn-sm">
+                                                    <i class="fas fa-question-circle me-1"></i> Help Center
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="alert alert-info">
+                                <div class="d-flex">
+                                    <div class="flex-shrink-0">
+                                        <i class="fas fa-info-circle fa-2x mt-1 me-3"></i>
+                                    </div>
+                                    <div>
+                                        <h6>License Information</h6>
+                                        <p class="mb-0">
+                                            This software is licensed under the MIT License. You are using the standard edition. 
+                                            <a href="#" class="alert-link">Upgrade to Pro</a> for additional features and support.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="d-flex justify-content-between align-items-center mt-4">
+                                <div>
+                                    <button type="button" class="btn btn-outline-secondary me-2">
+                                        <i class="fas fa-sync-alt me-1"></i> Check for Updates
+                                    </button>
+                                    <button type="button" class="btn btn-outline-secondary">
+                                        <i class="fas fa-download me-1"></i> Download Update
+                                    </button>
+                                </div>
+                                <div>
+                                    <button type="button" class="btn btn-outline-primary">
+                                        <i class="fas fa-shield-alt me-1"></i> System Health Check
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card mt-4">
+                <div class="card-body d-flex justify-content-between align-items-center">
+                    <div>
+                        <button type="button" class="btn btn-outline-secondary me-2">
+                            <i class="fas fa-undo me-1"></i> Reset to Defaults
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary">
+                            <i class="fas fa-download me-1"></i> Export Settings
+                        </button>
+                    </div>
+                    <div>
+                        <button type="button" class="btn btn-light me-2">
+                            Cancel
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-1"></i> Save Changes
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Reset Face Data Modal -->
+<div class="modal fade" id="resetFaceDataModal" tabindex="-1" aria-labelledby="resetFaceDataModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="resetFaceDataModalLabel">Reset All Face Data</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>Warning:</strong> This action cannot be undone. All face recognition data will be permanently deleted.
+                </div>
+                <p>This will remove all stored face encodings and require all users to re-register their faces for recognition.</p>
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="checkbox" id="confirmReset" required>
+                    <label class="form-check-label" for="confirmReset">
+                        I understand that this action cannot be undone
+                    </label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="confirmResetBtn" disabled>
+                    <i class="fas fa-trash-alt me-1"></i> Reset All Face Data
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Toggle face recognition settings based on checkbox
+const faceRecognitionCheckbox = document.getElementById('face_recognition_enabled');
+const faceRecognitionSettings = document.getElementById('faceRecognitionSettings');
+
+if (faceRecognitionCheckbox) {
+    faceRecognitionCheckbox.addEventListener('change', function() {
+        if (this.checked) {
+            faceRecognitionSettings.style.display = 'block';
+        } else {
+            faceRecognitionSettings.style.display = 'none';
+        }
+    });
+}
+
+// Update confidence threshold value display
+const confidenceSlider = document.getElementById('face_confidence');
+const confidenceValue = document.getElementById('confidenceValue');
+
+if (confidenceSlider && confidenceValue) {
+    confidenceSlider.addEventListener('input', function() {
+        confidenceValue.textContent = this.value;
+    });
+}
+
+// Toggle overtime settings based on checkbox
+const overtimeCheckbox = document.getElementById('overtime_enabled');
+const overtimeSettings = document.getElementById('overtimeSettings');
+
+if (overtimeCheckbox) {
+    overtimeCheckbox.addEventListener('change', function() {
+        if (this.checked) {
+            overtimeSettings.style.display = 'block';
+        } else {
+            overtimeSettings.style.display = 'none';
+        }
+    });
+}
+
+// Enable/disable reset button based on confirmation
+const confirmResetCheckbox = document.getElementById('confirmReset');
+const confirmResetBtn = document.getElementById('confirmResetBtn');
+
+if (confirmResetCheckbox && confirmResetBtn) {
+    confirmResetCheckbox.addEventListener('change', function() {
+        confirmResetBtn.disabled = !this.checked;
+    });
+}
+
+// Handle form submission
+const settingsForm = document.querySelector('form');
+if (settingsForm) {
+    settingsForm.addEventListener('submit', function(e) {
+        // Add any form validation here
+        console.log('Form submitted');
+        // Uncomment to prevent actual submission for demo
+        // e.preventDefault();
+        // alert('Settings saved successfully!');
+    });
+}
+
+// Initialize tab functionality
+const tabLinks = document.querySelectorAll('[data-bs-toggle="list"]');
+tabLinks.forEach(link => {
+    link.addEventListener('click', function(e) {
+        e.preventDefault();
+        const target = this.getAttribute('href');
+        
+        // Update active tab
+        tabLinks.forEach(l => l.classList.remove('active'));
+        this.classList.add('active');
+        
+        // Show target tab content
+        document.querySelectorAll('.tab-pane').forEach(pane => {
+            pane.classList.remove('show', 'active');
+        });
+        document.querySelector(target).classList.add('show', 'active');
+    });
+});
+</script>
+{% endblock %}

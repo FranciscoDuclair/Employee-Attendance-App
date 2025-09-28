@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Notification</title>
+    <script>
+        function getCsrfToken() {
+            const cookies = document.cookie.split(';');
+            for (let cookie of cookies) {
+                const [name, value] = cookie.trim().split('=');
+                if (name === 'csrftoken') {
+                    return value;
+                }
+            }
+            return '';
+        }
+
+        function testNotification() {
+            const data = {
+                title: 'Test Notification',
+                message: 'This is a test system notification',
+                recipients: 'all',
+                urgent: false
+            };
+
+            console.log('Sending test notification...');
+            
+            fetch('/api/notifications/send-system-notification-web/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCsrfToken()
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => {
+                console.log('Response status:', response.status);
+                return response.json();
+            })
+            .then(data => {
+                console.log('Response data:', data);
+                document.getElementById('result').innerHTML = JSON.stringify(data, null, 2);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                document.getElementById('result').innerHTML = 'Error: ' + error.message;
+            });
+        }
+    </script>
+</head>
+<body>
+    <h1>Test System Notification</h1>
+    <button onclick="testNotification()">Send Test Notification</button>
+    <pre id="result"></pre>
+</body>
+</html>

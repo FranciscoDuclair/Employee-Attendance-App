@@ -27,7 +27,12 @@ SECRET_KEY = 'django-insecure-qc85*4azrw^&95ys8uo*th7mq&5+(5u%9huaboceh8)bog-684
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', '0.0.0.0']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', '0.0.0.0', '192.168.4.27']
+
+# Currency Settings
+CURRENCY_CODE = 'XAF'
+CURRENCY_SYMBOL = 'FCFA'
+CURRENCY_NAME = 'Central African Franc'
 
 
 # Application definition
@@ -39,6 +44,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.humanize',
     
     # Third party apps
     'rest_framework',
@@ -46,6 +52,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'drf_spectacular',
     'django_filters',
+    'channels',
     
     # Local apps
     'users',
@@ -54,17 +61,22 @@ INSTALLED_APPS = [
     'leave',
     'shifts',
     'notifications',
+    'reports',
+    'utils',
 ]
 
 MIDDLEWARE = [
-    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
+    'attendance.middleware.SessionSecurityMiddleware',
+    'attendance.middleware.LoginAttemptMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'attendance.middleware.SecurityHeadersMiddleware',
 ]
 
 ROOT_URLCONF = 'attendance_platform.urls'
@@ -72,10 +84,11 @@ ROOT_URLCONF = 'attendance_platform.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
+                'django.template.context_processors.debug',
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
@@ -132,16 +145,18 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
-STATIC_URL = 'static/'
+LOGIN_URL = '/login/'
+STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
+# Media files (user uploads and generated reports)
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
-# Media files
-MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 # Django REST Framework
 REST_FRAMEWORK = {
@@ -190,6 +205,7 @@ CORS_ALLOWED_ORIGINS = [
     "http://127.0.0.1:3000",
     "http://localhost:19006",  # Expo development server
     "http://127.0.0.1:19006",
+    "http://192.168.4.27:19006",
 ]
 
 CORS_ALLOW_CREDENTIALS = True
@@ -205,3 +221,113 @@ SPECTACULAR_SETTINGS = {
 
 # Custom User Model
 AUTH_USER_MODEL = 'users.User'
+
+# Authentication settings
+AUTHENTICATION_BACKENDS = [
+    'attendance.backends.EmailAuthBackend',
+    'attendance.backends.FaceRecognitionAuthBackend',
+    'django.contrib.auth.backends.ModelBackend',
+]
+
+LOGIN_URL = '/login/'
+LOGIN_REDIRECT_URL = '/dashboard/'
+LOGOUT_REDIRECT_URL = '/login/'
+
+# Session Configuration
+SESSION_COOKIE_AGE = 86400  # 24 hours
+SESSION_COOKIE_SECURE = False  # Set to True in production with HTTPS
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = 'Lax'
+SESSION_SAVE_EVERY_REQUEST = True
+SESSION_EXPIRE_AT_BROWSER_CLOSE = False
+
+# Security Settings
+SECURE_BROWSER_XSS_FILTER = True
+SECURE_CONTENT_TYPE_NOSNIFF = True
+X_FRAME_OPTIONS = 'DENY'
+
+# Password Reset Settings
+PASSWORD_RESET_TIMEOUT = 3600  # 1 hour
+
+# Account lockout settings
+ACCOUNT_LOCKOUT_ATTEMPTS = 5
+ACCOUNT_LOCKOUT_DURATION = 900  # 15 minutes
+
+# Session timeout settings
+SESSION_TIMEOUT_MINUTES = 60
+
+# Password policy settings
+PASSWORD_AGE_LIMIT_DAYS = 90
+
+# Django Channels Configuration
+ASGI_APPLICATION = 'attendance_platform.asgi.application'
+
+# Channel Layers (Redis Backend)
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            "hosts": [('127.0.0.1', 6379)],
+        },
+    },
+}
+
+# WebSocket Settings
+WEBSOCKET_URL = '/ws/'
+WEBSOCKET_ALLOWED_ORIGINS = [
+    'localhost:3000',
+    '127.0.0.1:3000',
+    'localhost:19006',  # Expo development server
+    '127.0.0.1:19006',
+    '192.168.4.27:19006',
+]
+
+# Face Recognition Settings
+FACE_RECOGNITION_SETTINGS = {
+    'CONFIDENCE_THRESHOLD': 0.6,
+    'MAX_IMAGE_SIZE': (800, 600),
+    'ENCODING_MODEL': 'large',  # 'small' for faster, 'large' for more accurate
+    'ALLOWED_IMAGE_FORMATS': ['JPEG', 'JPG', 'PNG'],
+    'MAX_FILE_SIZE': 5 * 1024 * 1024,  # 5MB
+}
+
+# Logging Configuration
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
+            'style': '{',
+        },
+        'simple': {
+            'format': '{levelname} {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'file': {
+            'level': 'INFO',
+            'class': 'logging.FileHandler',
+            'filename': BASE_DIR / 'logs' / 'attendance.log',
+            'formatter': 'verbose',
+        },
+        'console': {
+            'level': 'DEBUG',
+            'class': 'logging.StreamHandler',
+            'formatter': 'simple',
+        },
+    },
+    'loggers': {
+        'attendance': {
+            'handlers': ['file', 'console'],
+            'level': 'INFO',
+            'propagate': True,
+        },
+        'utils.face_recognition_utils': {
+            'handlers': ['file', 'console'],
+            'level': 'INFO',
+            'propagate': True,
+        },
+    },
+}

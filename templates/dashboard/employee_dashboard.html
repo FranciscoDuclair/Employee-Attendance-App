@@ -1,0 +1,599 @@
+{% extends 'dashboard/base_dashboard.html' %}
+{% load humanize %}
+{% load static %}
+
+{% block title %}Employee Dashboard - {{ block.super }}{% endblock %}
+
+{% block extra_css %}
+{{ block.super }}
+<style>
+    .face-recognition-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+    }
+    .quick-action-card {
+        transition: transform 0.2s ease-in-out;
+        cursor: pointer;
+    }
+    .quick-action-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    }
+    .status-indicator {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        display: inline-block;
+        margin-right: 8px;
+    }
+    .status-online { background-color: #28a745; }
+    .status-offline { background-color: #dc3545; }
+    .status-break { background-color: #ffc107; }
+    
+    .attendance-clock {
+        font-family: 'Courier New', monospace;
+        font-size: 2.5rem;
+        font-weight: bold;
+        color: #4e73df;
+    }
+    
+    .face-scan-btn {
+        background: linear-gradient(45deg, #4e73df, #224abe);
+        border: none;
+        border-radius: 50px;
+        padding: 15px 30px;
+        color: white;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+    
+    .face-scan-btn:hover {
+        background: linear-gradient(45deg, #224abe, #4e73df);
+        transform: scale(1.05);
+        color: white;
+    }
+</style>
+{% endblock %}
+
+{% block dashboard_content %}
+<!-- Welcome Header -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card face-recognition-card">
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <h3 class="mb-2">Welcome back, {{ user.get_full_name|default:user.username }}!</h3>
+                        <p class="mb-0 opacity-75">
+                            <span class="status-indicator {% if attendance_status == 'checked_in' %}status-online{% elif attendance_status == 'checked_out' %}status-offline{% else %}status-break{% endif %}"></span>
+                            {% if attendance_status == 'checked_in' %}
+                                You're currently checked in
+                            {% elif attendance_status == 'checked_out' %}
+                                You're checked out for today
+                            {% else %}
+                                Ready to start your day?
+                            {% endif %}
+                        </p>
+                    </div>
+                    <div class="col-md-4 text-end">
+                        <div class="attendance-clock" id="currentTime">{{ current_time|time:"H:i:s" }}</div>
+                        <p class="mb-0 small opacity-75">{{ today|date:"l, F d, Y" }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Face Recognition Attendance -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="fas fa-user-check me-2"></i>Face Recognition Attendance</h5>
+                <span class="badge bg-primary">{{ attendance_status|title }}</span>
+            </div>
+            <div class="card-body text-center">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <video id="video" width="320" height="240" autoplay style="border-radius: 10px; display: none;"></video>
+                            <canvas id="canvas" width="320" height="240" style="border-radius: 10px; display: none;"></canvas>
+                            <div id="camera-placeholder" class="bg-light d-flex align-items-center justify-content-center" style="width: 320px; height: 240px; border-radius: 10px; margin: 0 auto;">
+                                <i class="fas fa-camera fa-3x text-muted"></i>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            {% if attendance_status != 'checked_in' %}
+                                <button class="btn face-scan-btn me-2" onclick="startFaceRecognition('check_in')">
+                                    <i class="fas fa-sign-in-alt me-2"></i>Face Check-In
+                                </button>
+                            {% else %}
+                                <button class="btn face-scan-btn me-2" onclick="startFaceRecognition('check_out')">
+                                    <i class="fas fa-sign-out-alt me-2"></i>Face Check-Out
+                                </button>
+                            {% endif %}
+                            <button class="btn btn-outline-secondary" onclick="toggleManualEntry()">
+                                <i class="fas fa-keyboard me-1"></i>Manual Entry
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="alert alert-info">
+                            <h6><i class="fas fa-info-circle me-2"></i>How it works:</h6>
+                            <ol class="mb-0 text-start">
+                                <li>Click the Face Check-In/Out button</li>
+                                <li>Allow camera access when prompted</li>
+                                <li>Position your face in the camera view</li>
+                                <li>Wait for recognition confirmation</li>
+                            </ol>
+                        </div>
+                        
+                        <!-- Manual Entry Form (Hidden by default) -->
+                        <div id="manual-entry-form" style="display: none;">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h6 class="mb-0">Manual Attendance Entry</h6>
+                                </div>
+                                <div class="card-body">
+                                    <form id="manualAttendanceForm">
+                                        {% csrf_token %}
+                                        <div class="mb-3">
+                                            <label class="form-label">Action</label>
+                                            <select class="form-select" name="action" required>
+                                                {% if attendance_status != 'checked_in' %}
+                                                    <option value="check_in">Check In</option>
+                                                {% else %}
+                                                    <option value="check_out">Check Out</option>
+                                                {% endif %}
+                                            </select>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label">Reason (if not using face recognition)</label>
+                                            <textarea class="form-control" name="reason" rows="2" placeholder="e.g., Camera not working, forgot phone, etc."></textarea>
+                                        </div>
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="fas fa-save me-1"></i>Submit
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row mb-4">
+    <div class="col-md-3 mb-3">
+        <div class="card quick-action-card h-100 text-center" data-url="{% url 'leave:dashboard' %}">
+            <div class="card-body">
+                <i class="fas fa-calendar-alt fa-2x text-primary mb-3"></i>
+                <h6 class="card-title">Manage Leave</h6>
+                <p class="card-text small text-muted">Create, view, and manage your leave requests</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card quick-action-card h-100 text-center" data-url="{% url 'attendance_web:attendance_list' %}">
+            <div class="card-body">
+                <i class="fas fa-clock fa-2x text-info mb-3"></i>
+                <h6 class="card-title">View Attendance</h6>
+                <p class="card-text small text-muted">Check your attendance history</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card quick-action-card h-100 text-center" data-url="{% url 'shifts:schedule' %}">
+            <div class="card-body">
+                <i class="fas fa-calendar-week fa-2x text-warning mb-3"></i>
+                <h6 class="card-title">My Schedule</h6>
+                <p class="card-text small text-muted">View your work schedule</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card quick-action-card h-100 text-center" data-url="{% url 'payroll:payslip_download' %}">
+            <div class="card-body">
+                <i class="fas fa-file-download fa-2x text-success mb-3"></i>
+                <h6 class="card-title">Download Payslip</h6>
+                <p class="card-text small text-muted">Get your latest payslip</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Statistics Dashboard -->
+<div class="row mb-4">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                <h6 class="mb-0"><i class="fas fa-chart-line me-2"></i>Monthly Overview</h6>
+                <div class="dropdown">
+                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                        This Month
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="#">This Month</a></li>
+                        <li><a class="dropdown-item" href="#">Last Month</a></li>
+                        <li><a class="dropdown-item" href="#">Last 3 Months</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-md-3 mb-3">
+                        <div class="border-end">
+                            <h4 class="text-primary mb-1">{{ monthly_stats.present_days|default:0 }}</h4>
+                            <p class="text-muted small mb-0">Days Present</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="border-end">
+                            <h4 class="text-warning mb-1">{{ monthly_stats.late_days|default:0 }}</h4>
+                            <p class="text-muted small mb-0">Late Arrivals</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="border-end">
+                            <h4 class="text-danger mb-1">{{ monthly_stats.absent_days|default:0 }}</h4>
+                            <p class="text-muted small mb-0">Absent Days</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <h4 class="text-success mb-1">{{ monthly_stats.total_hours|default:0 }}h</h4>
+                        <p class="text-muted small mb-0">Total Hours</p>
+                    </div>
+                </div>
+                
+                <!-- Attendance Chart Placeholder -->
+                <div class="mt-4">
+                    <canvas id="attendanceChart" height="100"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <!-- Leave Balance Card -->
+        <div class="card mb-3">
+            <div class="card-header bg-light">
+                <h6 class="mb-0"><i class="fas fa-umbrella-beach me-2"></i>Leave Balance</h6>
+            </div>
+            <div class="card-body">
+                <div class="text-center mb-3">
+                    <div class="progress-circle mx-auto mb-3" data-percentage="{{ leave_balance_percentage|default:0 }}">
+                        <span class="progress-value">{{ leave_balance|default:0 }}</span>
+                    </div>
+                    <p class="text-muted small">Days remaining this year</p>
+                </div>
+                
+                <div class="row text-center">
+                    <div class="col-6">
+                        <h6 class="text-primary mb-0">{{ leave_used|default:0 }}</h6>
+                        <small class="text-muted">Used</small>
+                    </div>
+                    <div class="col-6">
+                        <h6 class="text-success mb-0">{{ leave_total|default:0 }}</h6>
+                        <small class="text-muted">Total</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Upcoming Events -->
+        <div class="card">
+            <div class="card-header bg-light">
+                <h6 class="mb-0"><i class="fas fa-calendar-alt me-2"></i>Upcoming</h6>
+            </div>
+            <div class="card-body p-0">
+                {% if upcoming_events %}
+                    <ul class="list-group list-group-flush">
+                        {% for event in upcoming_events %}
+                            <li class="list-group-item">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="mb-1">{{ event.title }}</h6>
+                                        <small class="text-muted">{{ event.date|date:"M d, Y" }}</small>
+                                    </div>
+                                    <span class="badge bg-{{ event.type }}">{{ event.type|title }}</span>
+                                </div>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <div class="text-center p-3 text-muted">
+                        <i class="fas fa-calendar-check fa-2x mb-2"></i>
+                        <p class="mb-0 small">No upcoming events</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Activity -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                <h6 class="mb-0"><i class="fas fa-history me-2"></i>Recent Activity</h6>
+                <a href="{% url 'attendance_web:attendance_list' %}" class="btn btn-sm btn-outline-primary">
+                    View All <i class="fas fa-arrow-right ms-1"></i>
+                </a>
+            </div>
+            <div class="card-body p-0">
+                {% if recent_activity %}
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Action</th>
+                                    <th>Time</th>
+                                    <th>Method</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for activity in recent_activity %}
+                                    <tr>
+                                        <td>
+                                            <i class="fas {% if activity.type == 'check_in' %}fa-sign-in-alt text-success{% else %}fa-sign-out-alt text-danger{% endif %} me-2"></i>
+                                            {{ activity.action|title }}
+                                        </td>
+                                        <td>{{ activity.timestamp|date:"M d, H:i" }}</td>
+                                        <td>
+                                            {% if activity.method == 'face_recognition' %}
+                                                <span class="badge bg-primary">Face Recognition</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">Manual</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-success">Verified</span>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center p-4 text-muted">
+                        <i class="fas fa-inbox fa-3x mb-3"></i>
+                        <p class="mb-0">No recent activity found</p>
+                        <small>Your attendance records will appear here</small>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{{ block.super }}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Real-time clock update
+    function updateClock() {
+        const now = new Date();
+        const timeString = now.toLocaleTimeString('en-US', { 
+            hour12: false,
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit'
+        });
+        document.getElementById('currentTime').textContent = timeString;
+    }
+    
+    setInterval(updateClock, 1000);
+    
+    // CSRF Token Helper Function
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+    
+    // Face Recognition Functions
+    let video, canvas, faceCtx;
+    let stream = null;
+    
+    window.startFaceRecognition = function(action) {
+        video = document.getElementById('video');
+        canvas = document.getElementById('canvas');
+        faceCtx = canvas.getContext('2d');
+        
+        // Show video, hide placeholder
+        document.getElementById('camera-placeholder').style.display = 'none';
+        video.style.display = 'block';
+        
+        navigator.mediaDevices.getUserMedia({ video: true })
+            .then(function(mediaStream) {
+                stream = mediaStream;
+                video.srcObject = stream;
+                video.play();
+                
+                // Show capture button after video starts
+                setTimeout(() => {
+                    showCaptureButton(action);
+                }, 1000);
+            })
+            .catch(function(err) {
+                console.error('Error accessing camera:', err);
+                alert('Unable to access camera. Please check permissions and try again.');
+                resetCamera();
+            });
+    };
+    
+    function showCaptureButton(action) {
+        const captureBtn = document.createElement('button');
+        captureBtn.className = 'btn btn-success mt-2';
+        captureBtn.innerHTML = '<i class="fas fa-camera me-1"></i>Capture & Verify';
+        captureBtn.onclick = () => captureAndVerify(action);
+        
+        video.parentNode.appendChild(captureBtn);
+    }
+    
+    function captureAndVerify(action) {
+        // Capture image from video
+        faceCtx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const imageData = canvas.toDataURL('image/jpeg');
+        
+        // Show loading state
+        const loadingDiv = document.createElement('div');
+        loadingDiv.className = 'alert alert-info mt-3';
+        loadingDiv.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Verifying your identity...';
+        video.parentNode.appendChild(loadingDiv);
+        
+        // Send to server for face recognition
+        fetch('{% url "attendance_web:face_recognition_verify" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({
+                image: imageData,
+                action: action
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showSuccessMessage(action, data.message);
+                setTimeout(() => {
+                    location.reload();
+                }, 2000);
+            } else {
+                showErrorMessage(data.message || 'Face recognition failed. Please try again.');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showErrorMessage('Network error. Please try again.');
+        })
+        .finally(() => {
+            resetCamera();
+        });
+    }
+    
+    function resetCamera() {
+        if (stream) {
+            stream.getTracks().forEach(track => track.stop());
+            stream = null;
+        }
+        
+        video.style.display = 'none';
+        canvas.style.display = 'none';
+        document.getElementById('camera-placeholder').style.display = 'flex';
+        
+        // Remove any added buttons or messages
+        const extraElements = video.parentNode.querySelectorAll('button:not(.face-scan-btn):not(.btn-outline-secondary), .alert');
+        extraElements.forEach(el => el.remove());
+    }
+    
+    window.toggleManualEntry = function() {
+        const form = document.getElementById('manual-entry-form');
+        form.style.display = form.style.display === 'none' ? 'block' : 'none';
+    };
+    
+    function showSuccessMessage(action, message) {
+        const alertDiv = document.createElement('div');
+        alertDiv.className = 'alert alert-success mt-3';
+        alertDiv.innerHTML = `<i class="fas fa-check-circle me-2"></i>${message}`;
+        video.parentNode.appendChild(alertDiv);
+    }
+    
+    function showErrorMessage(message) {
+        const alertDiv = document.createElement('div');
+        alertDiv.className = 'alert alert-danger mt-3';
+        alertDiv.innerHTML = `<i class="fas fa-exclamation-circle me-2"></i>${message}`;
+        video.parentNode.appendChild(alertDiv);
+    }
+    
+    // Manual attendance form submission
+    document.getElementById('manualAttendanceForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(this);
+        
+        fetch('{% url "attendance_web:manual_attendance" %}', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Attendance recorded successfully!');
+                location.reload();
+            } else {
+                alert('Error: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Network error. Please try again.');
+        });
+    });
+    
+    // Quick action card click handlers
+    document.querySelectorAll('.quick-action-card').forEach(card => {
+        card.addEventListener('click', function() {
+            const url = this.getAttribute('data-url');
+            if (url) {
+                window.location.href = url;
+            }
+        });
+    });
+    
+    // Attendance Chart
+    const chartCtx = document.getElementById('attendanceChart').getContext('2d');
+    new Chart(chartCtx, {
+        type: 'line',
+        data: {
+            labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
+            datasets: [{
+                label: 'Hours Worked',
+                data: [40, 38, 42, 39],
+                borderColor: '#4e73df',
+                backgroundColor: 'rgba(78, 115, 223, 0.1)',
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 50
+                }
+            },
+            plugins: {
+                legend: {
+                    display: false
+                }
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,171 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}My Shifts - Employee Attendance System{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">My Shifts</h1>
+        <div class="d-flex">
+            <a href="{% url 'attendance_web:dashboard' %}" class="btn btn-primary btn-sm mr-2">
+                <i class="fas fa-arrow-left fa-sm text-white-50"></i> Back to Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- Filter Form -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Filter Shifts</h6>
+        </div>
+        <div class="card-body">
+            <form method="GET" class="row">
+                <div class="col-md-3">
+                    <label for="status">Status:</label>
+                    <select name="status" id="status" class="form-control">
+                        <option value="">All Statuses</option>
+                        <option value="scheduled" {% if status_filter == 'scheduled' %}selected{% endif %}>Scheduled</option>
+                        <option value="in_progress" {% if status_filter == 'in_progress' %}selected{% endif %}>In Progress</option>
+                        <option value="completed" {% if status_filter == 'completed' %}selected{% endif %}>Completed</option>
+                        <option value="cancelled" {% if status_filter == 'cancelled' %}selected{% endif %}>Cancelled</option>
+                        <option value="no_show" {% if status_filter == 'no_show' %}selected{% endif %}>No Show</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="date_from">From Date:</label>
+                    <input type="date" name="date_from" id="date_from" class="form-control" value="{{ date_from }}">
+                </div>
+                <div class="col-md-3">
+                    <label for="date_to">To Date:</label>
+                    <input type="date" name="date_to" id="date_to" class="form-control" value="{{ date_to }}">
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary mr-2">Filter</button>
+                    <a href="{% url 'shifts:schedule' %}" class="btn btn-secondary">Clear</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Upcoming Shifts -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Upcoming Shifts</h6>
+                </div>
+                <div class="card-body">
+                    {% if upcoming_shifts %}
+                        {% for shift in upcoming_shifts %}
+                        <div class="d-flex align-items-center mb-3 p-3 border rounded">
+                            <div class="mr-3">
+                                <div class="icon-circle bg-primary">
+                                    <i class="fas fa-clock text-white"></i>
+                                </div>
+                            </div>
+                            <div class="flex-grow-1">
+                                <div class="small text-gray-500">{{ shift.date|date:"M d, Y" }}</div>
+                                <div class="font-weight-bold">{{ shift.shift.name }}</div>
+                                <div class="small">{{ shift.shift.start_time|time:"H:i" }} - {{ shift.shift.end_time|time:"H:i" }}</div>
+                                <span class="badge badge-{% if shift.status == 'scheduled' %}primary{% elif shift.status == 'in_progress' %}warning{% elif shift.status == 'completed' %}success{% elif shift.status == 'cancelled' %}danger{% else %}secondary{% endif %}">
+                                    {{ shift.get_status_display }}
+                                </span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-muted">No upcoming shifts scheduled.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Shifts -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Recent Shifts</h6>
+                </div>
+                <div class="card-body">
+                    {% if recent_shifts %}
+                        {% for shift in recent_shifts %}
+                        <div class="d-flex align-items-center mb-3 p-3 border rounded">
+                            <div class="mr-3">
+                                <div class="icon-circle bg-{% if shift.status == 'completed' %}success{% elif shift.status == 'cancelled' %}danger{% else %}secondary{% endif %}">
+                                    <i class="fas fa-{% if shift.status == 'completed' %}check{% elif shift.status == 'cancelled' %}times{% else %}clock{% endif %} text-white"></i>
+                                </div>
+                            </div>
+                            <div class="flex-grow-1">
+                                <div class="small text-gray-500">{{ shift.date|date:"M d, Y" }}</div>
+                                <div class="font-weight-bold">{{ shift.shift.name }}</div>
+                                <div class="small">{{ shift.shift.start_time|time:"H:i" }} - {{ shift.shift.end_time|time:"H:i" }}</div>
+                                <span class="badge badge-{% if shift.status == 'scheduled' %}primary{% elif shift.status == 'in_progress' %}warning{% elif shift.status == 'completed' %}success{% elif shift.status == 'cancelled' %}danger{% else %}secondary{% endif %}">
+                                    {{ shift.get_status_display }}
+                                </span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-muted">No recent shifts found.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- All Shifts Table -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">All My Shifts</h6>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered" width="100%" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Shift</th>
+                            <th>Time</th>
+                            <th>Duration</th>
+                            <th>Status</th>
+                            <th>Notes</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for shift in shifts %}
+                        <tr>
+                            <td>{{ shift.date|date:"M d, Y" }}</td>
+                            <td>{{ shift.shift.name }}</td>
+                            <td>{{ shift.shift.start_time|time:"H:i" }} - {{ shift.shift.end_time|time:"H:i" }}</td>
+                            <td>{{ shift.shift.total_hours|floatformat:1 }} hours</td>
+                            <td>
+                                <span class="badge badge-{% if shift.status == 'scheduled' %}primary{% elif shift.status == 'in_progress' %}warning{% elif shift.status == 'completed' %}success{% elif shift.status == 'cancelled' %}danger{% else %}secondary{% endif %}">
+                                    {{ shift.get_status_display }}
+                                </span>
+                            </td>
+                            <td>{{ shift.notes|default:"-" }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center text-muted">No shifts found matching your criteria.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.icon-circle {
+    height: 2.5rem;
+    width: 2.5rem;
+    border-radius: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+</style>
+{% endblock %}
