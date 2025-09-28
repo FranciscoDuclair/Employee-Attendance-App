@@ -1,16 +1,16 @@
 /* 
- * PulseCheck Branding Styles
- * Custom styling for the PulseCheck Employee Attendance System
+ * PulseCHECKX Branding Styles
+ * Custom styling for the PulseCHECKX Employee Attendance System
  */
 
 /* ===== BRAND COLORS ===== */
 :root {
-    --pulsecheck-primary: #0066cc;
-    --pulsecheck-secondary: #17a2b8;
-    --pulsecheck-dark: #2c3e50;
-    --pulsecheck-light: #f8f9fa;
-    --pulsecheck-pulse: #007bff;
-    --pulsecheck-gradient: linear-gradient(135deg, #0066cc 0%, #17a2b8 100%);
+    --pulsecheckx-primary: #0066cc;
+    --pulsecheckx-secondary: #17a2b8;
+    --pulsecheckx-dark: #2c3e50;
+    --pulsecheckx-light: #f8f9fa;
+    --pulsecheckx-pulse: #007bff;
+    --pulsecheckx-gradient: linear-gradient(135deg, #0066cc 0%, #17a2b8 100%);
 }
 
 /* ===== LOGO AND BRANDING ===== */
@@ -45,8 +45,8 @@
 }
 
 /* ===== BRAND HEADERS ===== */
-.pulsecheck-header {
-    background: var(--pulsecheck-gradient);
+.pulsecheckx-header {
+    background: var(--pulsecheckx-gradient);
     color: white;
     padding: 2rem 0;
     border-radius: 0.5rem;
@@ -65,7 +65,7 @@
 
 /* ===== DASHBOARD ENHANCEMENTS ===== */
 .admin-header {
-    background: var(--pulsecheck-gradient);
+    background: var(--pulsecheckx-gradient);
     border: none;
 }
 
@@ -97,7 +97,7 @@
     left: 0;
     right: 0;
     height: 4px;
-    background: var(--pulsecheck-gradient);
+    background: var(--pulsecheckx-gradient);
 }
 
 .metric-card:hover {
@@ -106,7 +106,7 @@
 }
 
 .metric-card .fa-users {
-    color: var(--pulsecheck-primary);
+    color: var(--pulsecheckx-primary);
 }
 
 .metric-card .fa-clock {
@@ -123,7 +123,7 @@
 
 /* ===== BUTTONS ===== */
 .btn-primary {
-    background: var(--pulsecheck-gradient);
+    background: var(--pulsecheckx-gradient);
     border: none;
     box-shadow: 0 2px 4px rgba(0, 102, 204, 0.3);
 }
@@ -135,13 +135,13 @@
 }
 
 .btn-outline-primary {
-    border-color: var(--pulsecheck-primary);
-    color: var(--pulsecheck-primary);
+    border-color: var(--pulsecheckx-primary);
+    color: var(--pulsecheckx-primary);
 }
 
 .btn-outline-primary:hover {
-    background: var(--pulsecheck-primary);
-    border-color: var(--pulsecheck-primary);
+    background: var(--pulsecheckx-primary);
+    border-color: var(--pulsecheckx-primary);
 }
 
 /* ===== NAVIGATION ENHANCEMENTS ===== */
@@ -171,7 +171,7 @@
 }
 
 .card-header {
-    background: var(--pulsecheck-gradient);
+    background: var(--pulsecheckx-gradient);
     color: white;
     border-bottom: none;
     font-weight: 600;
@@ -225,7 +225,7 @@
 
 /* ===== PROGRESS BARS ===== */
 .progress-bar {
-    background: var(--pulsecheck-gradient);
+    background: var(--pulsecheckx-gradient);
 }
 
 /* ===== FOOTER ===== */
@@ -318,7 +318,7 @@ footer .text-info {
 /* ===== PRINT STYLES ===== */
 @media print {
     .navbar-brand::before {
-        content: "PulseCheck - ";
+        content: "PulseCHECKX - ";
         font-weight: bold;
     }
     
@@ -326,7 +326,7 @@ footer .text-info {
         content: "♥ ";
     }
     
-    .pulsecheck-header,
+    .pulsecheckx-header,
     .admin-header {
         background: #f8f9fa !important;
         color: #000 !important;
@@ -336,30 +336,30 @@ footer .text-info {
 }
 
 /* ===== CUSTOM UTILITIES ===== */
-.text-pulsecheck-primary {
-    color: var(--pulsecheck-primary) !important;
+.text-pulsecheckx-primary {
+    color: var(--pulsecheckx-primary) !important;
 }
 
-.text-pulsecheck-secondary {
-    color: var(--pulsecheck-secondary) !important;
+.text-pulsecheckx-secondary {
+    color: var(--pulsecheckx-secondary) !important;
 }
 
-.bg-pulsecheck-primary {
-    background-color: var(--pulsecheck-primary) !important;
+.bg-pulsecheckx-primary {
+    background-color: var(--pulsecheckx-primary) !important;
 }
 
-.bg-pulsecheck-secondary {
-    background-color: var(--pulsecheck-secondary) !important;
+.bg-pulsecheckx-secondary {
+    background-color: var(--pulsecheckx-secondary) !important;
 }
 
-.bg-pulsecheck-gradient {
-    background: var(--pulsecheck-gradient) !important;
+.bg-pulsecheckx-gradient {
+    background: var(--pulsecheckx-gradient) !important;
 }
 
-.border-pulsecheck-primary {
-    border-color: var(--pulsecheck-primary) !important;
+.border-pulsecheckx-primary {
+    border-color: var(--pulsecheckx-primary) !important;
 }
 
-.border-pulsecheck-secondary {
-    border-color: var(--pulsecheck-secondary) !important;
+.border-pulsecheckx-secondary {
+    border-color: var(--pulsecheckx-secondary) !important;
 }
